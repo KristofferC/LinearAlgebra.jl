@@ -1779,6 +1779,10 @@ Condition number of the matrix `M`, computed using the operator `p`-norm. Valid 
 """
 function cond(A::AbstractMatrix, p::Real=2)
     if p == 2
+        if isempty(A)
+            checksquare(A)
+            return zero(real(eigtype(eltype(A))))
+        end
         v = svdvals(A)
         maxv = maximum(v)
         return iszero(maxv) ? oftype(real(maxv), Inf) : maxv / minimum(v)

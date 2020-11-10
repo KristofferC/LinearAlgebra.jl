@@ -56,6 +56,25 @@ Random.seed!(1234323)
         @test cond(Mars, 2)   ≈ 6.181867355918493
         @test cond(Mars, Inf) ≈ 7.1
     end
+    @testset "Empty matrices" begin
+        # zero for square (i.e. 0×0) matrices
+        @test cond(zeros(Int, 0, 0), 1) === 0.0
+        @test cond(zeros(Int, 0, 0), 2) === 0.0
+        @test cond(zeros(Int, 0, 0), Inf) === 0.0
+        @test cond(zeros(0, 0), 1) === 0.0
+        @test cond(zeros(0, 0), 2) === 0.0
+        @test cond(zeros(0, 0), Inf) === 0.0
+        @test cond(zeros(ComplexF64, 0, 0), 1) === 0.0
+        @test cond(zeros(ComplexF64, 0, 0), 2) === 0.0
+        @test cond(zeros(ComplexF64, 0, 0), Inf) === 0.0
+        # error for non-square matrices
+        @test_throws DimensionMismatch cond(zeros(10, 0), 1)
+        @test_throws DimensionMismatch cond(zeros(0, 10), 1)
+        @test_throws DimensionMismatch cond(zeros(10, 0), 2)
+        @test_throws DimensionMismatch cond(zeros(0, 10), 2)
+        @test_throws DimensionMismatch cond(zeros(10, 0), Inf)
+        @test_throws DimensionMismatch cond(zeros(0, 10), Inf)
+    end
 end
 
 areal = randn(n,n)/2

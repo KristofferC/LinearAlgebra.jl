@@ -263,6 +263,21 @@ end
         lazy"cannot set index on the diagonal ($i, $j) of an $Tn matrix to a non-unit value ($x)"))
 end
 
+_zero_triangular_half_str(::Type{<:UpperOrUnitUpperTriangular}) = "lower"
+_zero_triangular_half_str(::Type{<:LowerOrUnitLowerTriangular}) = "upper"
+
+@noinline function throw_nonzeroerror(T, @nospecialize(x), i, j)
+    Ts = _zero_triangular_half_str(T)
+    Tn = nameof(T)
+    throw(ArgumentError(
+        lazy"cannot set index in the $Ts triangular part ($i, $j) of an $Tn matrix to a nonzero value ($x)"))
+end
+@noinline function throw_nononeerror(T, @nospecialize(x), i, j)
+    Tn = nameof(T)
+    throw(ArgumentError(
+        lazy"cannot set index on the diagonal ($i, $j) of an $Tn matrix to a non-unit value ($x)"))
+end
+
 @propagate_inbounds function setindex!(A::UpperTriangular, x, i::Integer, j::Integer)
     if i > j
         iszero(x) || throw_nonzeroerror(typeof(A), x, i, j)

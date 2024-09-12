@@ -152,6 +152,12 @@ lowertriangular(U::LowerOrUnitLowerTriangular) = U
 
 Base.dataids(A::UpperOrLowerTriangular) = Base.dataids(A.data)
 
+uppertriangular(M) = UpperTriangular(M)
+lowertriangular(M) = LowerTriangular(M)
+
+uppertriangular(U::UpperOrUnitUpperTriangular) = U
+lowertriangular(U::LowerOrUnitLowerTriangular) = U
+
 imag(A::UpperTriangular) = UpperTriangular(imag(A.data))
 imag(A::LowerTriangular) = LowerTriangular(imag(A.data))
 imag(A::UpperTriangular{<:Any,<:StridedMaybeAdjOrTransMat}) = imag.(A)

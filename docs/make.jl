@@ -13,4 +13,4 @@ makedocs(
     format = HTML(size_threshold = 600 * 2^10 #=600 KiB=#),
     )
 
-deploydocs(repo = "github.com/KristofferC/LinearAlgebra.jl.git")
+deploydocs(repo = "github.com/KristofferC/LinearAlgebra.jl.git", push_preview = true)

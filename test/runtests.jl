@@ -2,6 +2,7 @@
 using Test, LinearAlgebra
 
 for file in readlines(joinpath(@__DIR__, "testgroups"))
+    @info "Testing $file"
     include(file * ".jl")
 end
 

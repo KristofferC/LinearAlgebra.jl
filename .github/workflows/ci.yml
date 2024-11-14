@@ -61,3 +61,4 @@ jobs:
           julia --project=docs --color=yes docs/make.jl
         env:
           DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

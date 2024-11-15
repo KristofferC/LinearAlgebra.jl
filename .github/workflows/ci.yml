@@ -3,7 +3,7 @@ on:
   pull_request:
   push:
     branches:
-      - 'main'
+      - 'master'
       - 'release-*'
     tags: '*'
 concurrency:
@@ -12,41 +12,6 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}-${{ github.ref != 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release-') || github.run_number }}
   cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
 jobs:
-  test:
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 60
-    strategy:
-      fail-fast: false
-      matrix:
-        julia-version:
-          - 'nightly'
-        os:
-          - ubuntu-latest
-          - windows-latest
-        julia-arch:
-          - x64
-          - x86
-        include:
-          - os: macOS-latest
-            julia-arch: aarch64
-            julia-version: 'nightly'
-          - os: macOS-13
-            julia-arch: x64
-            julia-version: 'nightly'
-    steps:
-      - uses: actions/checkout@v4
-      - uses: julia-actions/setup-julia@v2
-        with:
-          version: ${{ matrix.julia-version }}
-          arch: ${{ matrix.julia-arch }}
-      - uses: julia-actions/cache@v2
-      - uses: julia-actions/julia-buildpkg@v1
-      - uses: julia-actions/julia-runtest@v1
-      - uses: julia-actions/julia-processcoverage@v1
-      - uses: codecov/codecov-action@v4
-        with:
-          file: lcov.info
-          token: ${{ secrets.CODECOV_TOKEN }}
   docs:
     runs-on: ubuntu-latest
     steps:

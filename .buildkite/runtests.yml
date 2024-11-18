@@ -1,0 +1,35 @@
+---
+steps:
+  # Linux x86_64
+  - label: ":linux: linux-x86_64"
+    plugins:
+      # Julia installation outside the sandbox
+      - JuliaCI/julia#v1:
+          version: '1.10'
+      - staticfloat/sandbox#v2:
+          rootfs_url: https://github.com/JuliaCI/rootfs-images/releases/download/v6.00/package_linux.x86_64.tar.gz
+          rootfs_treehash: "4dcde853eb5baaa0a8f087b633eaf955dc94b5dc"
+          uid: 1000
+          gid: 1000
+      # Julia installation inside the sandbox
+      - JuliaCI/julia#v1:
+          version: "nightly"
+    command: |
+      julia --color=yes --project=.ci -e 'using Pkg; Pkg.instantiate()'
+      julia --color=yes --project=.ci .ci/create_sysimage_and_run_tests.jl
+    agents:
+      queue: "julia"
+      os: "linux"
+      arch: "x86_64"
+  # macOS aarch64
+  - label: ":macos: macos-aarch64"
+    plugins:
+      - JuliaCI/julia#v1:
+          version: "nightly"
+    command: |
+      julia --color=yes --project=.ci -e 'using Pkg; Pkg.instantiate()'
+      julia --color=yes --project=.ci .ci/create_sysimage_and_run_tests.jl
+    agents:
+      queue: "julia"
+      os: "macos"
+      arch: "aarch64"

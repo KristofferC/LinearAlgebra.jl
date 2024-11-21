@@ -124,8 +124,8 @@ version = "0.3.28+3"
 
 [[deps.PackageCompiler]]
 deps = ["Artifacts", "Glob", "LazyArtifacts", "Libdl", "Pkg", "Printf", "RelocatableFolders", "TOML", "UUIDs", "p7zip_jll"]
-git-tree-sha1 = "f457fea1aad46fd990e613cf30911e2abc33281c"
-repo-rev = "kc/nightly"
+git-tree-sha1 = "02aabd917887f198fd0a01b1d935774c5c459f8c"
+repo-rev = "master"
 repo-url = "https://github.com/JuliaLang/PackageCompiler.jl.git"
 uuid = "9b87118b-4619-50d2-8e1e-99f35a4d4d9d"
 version = "2.1.22"
@@ -214,7 +214,7 @@ version = "1.3.1+1"
 [[deps.libblastrampoline_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "8e850b90-86db-534c-a0d3-1478176c7d93"
-version = "5.11.2+0"
+version = "5.11.1+0"
 
 [[deps.nghttp2_jll]]
 deps = ["Artifacts", "Libdl"]

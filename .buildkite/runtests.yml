@@ -21,6 +21,7 @@ steps:
       queue: "julia"
       os: "linux"
       arch: "x86_64"
+      cpuset_limited: "true"
   # macOS aarch64
   - label: ":macos: macos-aarch64"
     plugins:

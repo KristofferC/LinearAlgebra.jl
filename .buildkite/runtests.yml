@@ -34,3 +34,15 @@ steps:
       queue: "julia"
       os: "macos"
       arch: "aarch64"
+  # windows x86_64
+  - label: ":windows: windows-x86_64"
+    plugins:
+      - JuliaCI/julia#v1:
+          version: "nightly"
+    command: |
+      julia --color=yes --project=.ci -e 'using Pkg; Pkg.instantiate()'
+      julia --color=yes --project=.ci .ci/create_sysimage_and_run_tests.jl
+    agents:
+      queue: "julia"
+      os: "windows"
+      arch: "x86_64"

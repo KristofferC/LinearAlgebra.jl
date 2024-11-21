@@ -1,2 +1,0 @@
-# OS   ARCH    ROOTFS_IMAGE_NAME  ROOTFS_TAG  ROOTFS_ARCH  ROOTFS_HASH
-linux  x86_64  package_linux      v6.00       x86_64       4dcde853eb5baaa0a8f087b633eaf955dc94b5dc

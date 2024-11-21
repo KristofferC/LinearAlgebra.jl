@@ -2,7 +2,11 @@ using PackageCompiler
 
 sysimage = tempname()
 
-ncores = Sys.isapple() ? Sys.CPU_THREADS : ceil(Int, Sys.CPU_THREADS / 2)
+if haskey(ENV, "BUILDKITE")
+    ncores = Sys.CPU_THREADS
+else
+    ncores = ceil(Int, Sys.CPU_THREADS / 2)
+end
 
 withenv("JULIA_IMAGE_THREADS" => ncores) do
     create_sysimage(["LinearAlgebra", "Test", "Distributed", "Dates", "REPL", "Printf", "Random"]; sysimage_path=sysimage, incremental=false, filter_stdlibs=true)

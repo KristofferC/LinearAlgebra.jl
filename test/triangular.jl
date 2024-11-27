@@ -346,6 +346,11 @@ Base.getindex(A::MyTriangular, i::Int, j::Int) = A.data[i,j]
 
         # Begin loop for second Triangular matrix
         @testset for elty2 in (Float32, Float64, BigFloat, ComplexF32, ComplexF64, Complex{BigFloat}, Int)
+            # Only test methods for the same element type and a single combination of mixed element types
+            # to avoid too much compilation
+            if !(elty1 == elty2 || elty1 ∈ (ComplexF32, Int) || elty1 ∈ (ComplexF32, Int))
+                continue
+            end
             @testset for (t2, uplo2) in ((UpperTriangular, :U),
                                 (UnitUpperTriangular, :U),
                                 (LowerTriangular, :L),
@@ -438,6 +443,12 @@ Base.getindex(A::MyTriangular, i::Int, j::Int) = A.data[i,j]
         end
 
         for eltyB in (Float32, Float64, BigFloat, ComplexF32, ComplexF64, Complex{BigFloat})
+            # Only test methods for the same element type and a single combination of mixed element types
+            # to avoid too much compilation
+            if !(elty1 == eltyB || elty1 ∈ (ComplexF32, Int) || eltyB ∈ (ComplexF32, Int))
+                continue
+            end
+
             B = convert(Matrix{eltyB}, (elty1 <: Complex ? real(A1) : A1)*fill(1., n, n))
 
             debug && println("elty1: $elty1, A1: $t1, B: $eltyB")

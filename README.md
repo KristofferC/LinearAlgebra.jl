@@ -1,5 +1,7 @@
 # LinearAlgebra
 
+[![Doc Build](https://github.com/JuliaLang/LinearAlgebra.jl/actions/workflows/ci.yml/badge.svg)](https://github.com/JuliaLang/LinearAlgebra.jl/actions/workflows/ci.yml)
+
 This package is part of the Julia standard library (stdlib).
 
 `LinearAlgebra.jl` provides functionality for performing linear algebra operations in Julia.

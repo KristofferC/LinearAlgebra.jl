@@ -1,6 +1,6 @@
-using PackageCompiler
+using PackageCompiler, Libdl
 
-sysimage = tempname()
+sysimage = tempname() * "." * Libdl.dlext
 
 if haskey(ENV, "BUILDKITE")
     ncores = Sys.CPU_THREADS

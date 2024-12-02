@@ -4,6 +4,7 @@ module TestDense
 
 using Test, LinearAlgebra, Random
 using LinearAlgebra: BlasComplex, BlasFloat, BlasReal
+using Test: GenericArray
 
 const BASE_TEST_PATH = joinpath(Sys.BINDIR, "..", "share", "julia", "test")
 isdefined(Main, :FillArrays) || @eval Main include(joinpath($(BASE_TEST_PATH), "testhelpers", "FillArrays.jl"))
@@ -191,6 +192,8 @@ bimg  = randn(n,2)/2
         f = rand(eltya,n-2)
         A = diagm(0 => d)
         @test factorize(A) == Diagonal(d)
+        # test that the generic structure-evaluation method works
+        @test factorize(A) == factorize(GenericArray(A))
         A += diagm(-1 => e)
         @test factorize(A) == Bidiagonal(d,e,:L)
         A += diagm(-2 => f)

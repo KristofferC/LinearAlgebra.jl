@@ -1074,6 +1074,8 @@ _trimul!(C::AbstractMatrix, A::UpperOrLowerTriangular, B::AbstractTriangular) =
 _trimul!(C::AbstractMatrix, A::AbstractTriangular, B::UpperOrLowerTriangular) =
     generic_mattrimul!(C, uplo_char(B), isunit_char(B), wrapperop(parent(B)), A, _unwrap_at(parent(B)))
 
+# methods for LinearAlgebra.jl's own triangular types, to avoid `istriu` checks
+lmul!(A::UpperOrLowerTriangular, B::AbstractVecOrMat) = @inline _trimul!(B, A, B)
 function lmul!(A::AbstractTriangular, B::AbstractVecOrMat)
     if istriu(A)
         _trimul!(B, uppertriangular(A), B)
@@ -1081,6 +1083,7 @@ function lmul!(A::AbstractTriangular, B::AbstractVecOrMat)
         _trimul!(B, lowertriangular(A), B)
     end
 end
+rmul!(A::AbstractMatrix, B::UpperOrLowerTriangular) = @inline _trimul!(A, A, B)
 function rmul!(A::AbstractMatrix, B::AbstractTriangular)
     if istriu(B)
         _trimul!(A, A, uppertriangular(B))

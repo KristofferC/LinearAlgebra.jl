@@ -1618,13 +1618,25 @@ function getstructure(A::StridedMatrix)
     end
     return (utri, utri1, ltri, ltri1, sym, herm)
 end
+_check_sym_herm(A) = (issymmetric(A), ishermitian(A))
+_check_sym_herm(A::AbstractMatrix{<:Real}) = (sym = issymmetric(A); (sym,sym))
 function getstructure(A::AbstractMatrix)
-    utri = istriu(A)
     utri1 = istriu(A,-1)
-    ltri = istril(A)
-    ltri1 = istril(A,1)
-    sym = issymmetric(A)
-    herm = ishermitian(A)
+    # utri = istriu(A), but since we've already checked istriu(A,-1),
+    # we only need to check that the subdiagonal band is zero
+    utri = utri1 && iszero(diag(A,-1))
+    sym, herm = _check_sym_herm(A)
+    if sym || herm
+        # in either case, the lower and upper triangular halves have identical band structures
+        # in this case, istril(A,1) == istriu(A,-1) and istril(A) == istriu(A)
+        ltri1 = utri1
+        ltri = utri
+    else
+        ltri1 = istril(A,1)
+        # ltri = istril(A), but since we've already checked istril(A,1),
+        # we only need to check the superdiagonal band is zero
+        ltri = ltri1 && iszero(diag(A,1))
+    end
     return (utri, utri1, ltri, ltri1, sym, herm)
 end
 

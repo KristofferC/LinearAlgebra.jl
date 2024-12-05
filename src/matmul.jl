@@ -572,9 +572,9 @@ Base.@constprop :aggressive function gemv!(y::StridedVector{T}, tA::AbstractChar
                α::Number=true, β::Number=false) where {T<:BlasFloat}
     mA, nA = lapack_size(tA, A)
     nA != length(x) &&
-        throw(DimensionMismatch(lazy"second dimension of A, $nA, does not match length of x, $(length(x))"))
+        throw(DimensionMismatch(lazy"second dimension of matrix, $nA, does not match length of input vector, $(length(x))"))
     mA != length(y) &&
-        throw(DimensionMismatch(lazy"first dimension of A, $mA, does not match length of y, $(length(y))"))
+        throw(DimensionMismatch(lazy"first dimension of matrix, $mA, does not match length of output vector, $(length(y))"))
     mA == 0 && return y
     nA == 0 && return _rmul_or_fill!(y, β)
     alpha, beta = promote(α, β, zero(T))
@@ -603,9 +603,9 @@ Base.@constprop :aggressive function gemv!(y::StridedVector{Complex{T}}, tA::Abs
     α::Number = true, β::Number = false) where {T<:BlasReal}
     mA, nA = lapack_size(tA, A)
     nA != length(x) &&
-        throw(DimensionMismatch(lazy"second dimension of A, $nA, does not match length of x, $(length(x))"))
+        throw(DimensionMismatch(lazy"second dimension of matrix, $nA, does not match length of input vector, $(length(x))"))
     mA != length(y) &&
-        throw(DimensionMismatch(lazy"first dimension of A, $mA, does not match length of y, $(length(y))"))
+        throw(DimensionMismatch(lazy"first dimension of matrix, $mA, does not match length of output vector, $(length(y))"))
     mA == 0 && return y
     nA == 0 && return _rmul_or_fill!(y, β)
     alpha, beta = promote(α, β, zero(T))
@@ -627,9 +627,9 @@ Base.@constprop :aggressive function gemv!(y::StridedVector{Complex{T}}, tA::Abs
         α::Number = true, β::Number = false) where {T<:BlasReal}
     mA, nA = lapack_size(tA, A)
     nA != length(x) &&
-        throw(DimensionMismatch(lazy"second dimension of A, $nA, does not match length of x, $(length(x))"))
+        throw(DimensionMismatch(lazy"second dimension of matrix, $nA, does not match length of input vector, $(length(x))"))
     mA != length(y) &&
-        throw(DimensionMismatch(lazy"first dimension of A, $mA, does not match length of y, $(length(y))"))
+        throw(DimensionMismatch(lazy"first dimension of matrix, $mA, does not match length of output vector, $(length(y))"))
     mA == 0 && return y
     nA == 0 && return _rmul_or_fill!(y, β)
     alpha, beta = promote(α, β, zero(T))

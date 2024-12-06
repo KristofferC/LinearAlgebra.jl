@@ -1,5 +1,28 @@
 ---
 steps:
+  # Linux x86
+  - label: ":linux: linux-i686"
+    plugins:
+      # Julia installation outside the sandbox
+      - JuliaCI/julia#v1:
+          version: '1.10'
+      - staticfloat/sandbox#v2:
+          rootfs_url: https://github.com/JuliaCI/rootfs-images/releases/download/v6.00/package_linux.i686.tar.gz
+          rootfs_treehash: "a0c4756ee7827b3a75d4a62ff543315c1547e3d6"
+          uid: 1000
+          gid: 1000
+      # Julia installation inside the sandbox
+      - JuliaCI/julia#v1:
+          version: "nightly"
+    command: |
+      julia --color=yes --project=.ci -e 'using Pkg; Pkg.instantiate()'
+      julia --color=yes --project=.ci .ci/create_sysimage_and_run_tests.jl
+    agents:
+      queue: "julia"
+      os: "linux"
+      arch: "x86_64"
+      cpuset_limited: "true"
+    timeout_in_minutes: 120
   # Linux x86_64
   - label: ":linux: linux-x86_64"
     plugins:

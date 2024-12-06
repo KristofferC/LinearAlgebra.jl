@@ -23,7 +23,6 @@ steps:
       os: "linux"
       arch: "x86_64"
       cpuset_limited: "true"
-    timeout_in_minutes: 120
   # Linux x86_64
   - label: ":linux: linux-x86_64"
     plugins:
@@ -46,7 +45,6 @@ steps:
       os: "linux"
       arch: "x86_64"
       cpuset_limited: "true"
-    timeout_in_minutes: 120
   # macOS aarch64
   - label: ":macos: macos-aarch64"
     plugins:

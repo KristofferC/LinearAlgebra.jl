@@ -14,6 +14,7 @@ steps:
       # Julia installation inside the sandbox
       - JuliaCI/julia#v1:
           version: "nightly"
+          arch: "i686"
     command: |
       julia --color=yes --project=.ci -e 'using Pkg; Pkg.instantiate()'
       julia --color=yes --project=.ci .ci/create_sysimage_and_run_tests.jl

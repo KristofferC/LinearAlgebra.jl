@@ -376,4 +376,9 @@ end
     end
 end
 
+@testset "newindex with BandIndex" begin
+    ind = Broadcast.newindex(rand(2,2),LinearAlgebra.BandIndex(0,1))
+    @test ind == CartesianIndex(1,1)
+end
+
 end

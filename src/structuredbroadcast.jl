@@ -194,6 +194,7 @@ isvalidstructbc(dest::Bidiagonal, bc::Broadcasted{StructuredMatrixStyle{Bidiagon
     @inbounds Broadcast._broadcast_getindex(bc, b)
 end
 
+Broadcast.newindex(A, b::BandIndex) = Broadcast.newindex(A, _cartinds(b))
 function Broadcast.newindex(A::StructuredMatrix, b::BandIndex)
     # we use the fact that a StructuredMatrix is square,
     # and we apply newindex to both the axes at once to obtain the result

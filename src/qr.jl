@@ -31,7 +31,7 @@ The object has two fields:
   - The subdiagonal part contains the reflectors ``v_i`` stored in a packed format where
     ``v_i`` is the ``i``th column of the matrix `V = I + tril(F.factors, -1)`.
 
-* `τ` is a vector  of length `min(m,n)` containing the coefficients ``\tau_i``.
+* `τ` is a vector  of length `min(m,n)` containing the coefficients ``\\tau_i``.
 """
 struct QR{T,S<:AbstractMatrix{T},C<:AbstractVector{T}} <: Factorization{T}
     factors::S

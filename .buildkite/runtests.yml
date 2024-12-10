@@ -6,6 +6,8 @@ steps:
       # Julia installation outside the sandbox
       - JuliaCI/julia#v1:
           version: '1.10'
+      - JuliaCI/julia-coverage#v1:
+          codecov: true
       - staticfloat/sandbox#v2:
           rootfs_url: https://github.com/JuliaCI/rootfs-images/releases/download/v6.00/package_linux.x86_64.tar.gz
           rootfs_treehash: "4dcde853eb5baaa0a8f087b633eaf955dc94b5dc"
@@ -28,6 +30,8 @@ steps:
     plugins:
       - JuliaCI/julia#v1:
           version: "nightly"
+      - JuliaCI/julia-coverage#v1:
+          codecov: true
     command: |
       julia --color=yes --project=.ci -e 'using Pkg; Pkg.instantiate()'
       julia --color=yes --project=.ci .ci/create_sysimage_and_run_tests.jl
@@ -40,6 +44,8 @@ steps:
     plugins:
       - JuliaCI/julia#v1:
           version: "nightly"
+      - JuliaCI/julia-coverage#v1:
+          codecov: true
     command: |
       julia --color=yes --project=.ci -e 'using Pkg; Pkg.instantiate()'
       julia --color=yes --project=.ci .ci/create_sysimage_and_run_tests.jl

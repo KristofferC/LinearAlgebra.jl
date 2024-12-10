@@ -4,6 +4,13 @@ This package is part of the Julia standard library (stdlib).
 
 `LinearAlgebra.jl` provides functionality for performing linear algebra operations in Julia.
 
+| **Coverage**                    |
+|:-------------------------------:|
+| [![][codecov-img]][codecov-url] |
+
+[codecov-img]: https://codecov.io/gh/JuliaLang/LinearAlgebra.jl/branch/master/graph/badge.svg
+[codecov-url]: https://codecov.io/gh/JuliaLang/LinearAlgebra.jl
+
 ## Migrating a Pull Request (PR) from the Julia repository to this repository
 
 Since this package was split out from the main Julia repository, you might have previously made a pull request (PR) to the Julia repo. You can easily migrate such PRs to this repository using the following steps:

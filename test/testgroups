@@ -1,6 +1,7 @@
 triangular
 addmul
 bidiag
+bitarray
 matmul
 dense
 symmetric

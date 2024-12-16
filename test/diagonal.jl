@@ -463,7 +463,8 @@ Random.seed!(1)
         end
     end
 
-    @testset "svd (#11120/#11247)" begin
+    @testset "svd (#11120/#11247/#1149)" begin
+        D[1] = 0
         U, s, V = svd(D)
         @test (U*Diagonal(s))*V' ≈ D
         @test svdvals(D) == s

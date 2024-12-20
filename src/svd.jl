@@ -150,7 +150,7 @@ and `V` is ``N \\times N``, while in the thin factorization `U` is ``M
 number of singular values.
 
 `alg` specifies which algorithm and LAPACK method to use for SVD:
-- `alg = DivideAndConquer()` (default): Calls `LAPACK.gesdd!`.
+- `alg = LinearAlgebra.DivideAndConquer()` (default): Calls `LAPACK.gesdd!`.
 - `alg = LinearAlgebra.QRIteration()`: Calls `LAPACK.gesvd!` (typically slower but more accurate) .
 
 !!! compat "Julia 1.3"

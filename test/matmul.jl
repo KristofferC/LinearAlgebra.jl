@@ -1148,4 +1148,15 @@ end
     @test A * A ≈ M * M
 end
 
+@testset "issue #1147: error messages in matmul" begin
+    @test_throws "incompatible dimensions for matrix multiplication" zeros(0,0) * zeros(1,5)
+    @test_throws "incompatible dimensions for matrix multiplication" zeros(0,0) * zeros(1)
+    @test_throws "incompatible dimensions for matrix multiplication" zeros(0) * zeros(2,5)
+    @test_throws "incompatible dimensions for matrix multiplication" mul!(zeros(0,0), zeros(5), zeros(5))
+    @test_throws "incompatible dimensions for matrix multiplication" mul!(zeros(0,0), zeros(1,5), zeros(0,0))
+    @test_throws "incompatible destination size" mul!(zeros(0,0), zeros(1,5), zeros(5,2))
+    @test_throws "incompatible destination size" mul!(zeros(0,0), zeros(1,5), zeros(5))
+    @test_throws "incompatible destination size" mul!(zeros(0), zeros(1,5), zeros(5))
+end
+
 end # module TestMatmul

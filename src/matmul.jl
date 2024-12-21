@@ -408,6 +408,40 @@ julia> lmul!(F.Q, B)
 """
 lmul!(A, B)
 
+_vec_or_mat_str(s::Tuple{Any}) = :vector
+_vec_or_mat_str(s::Tuple{Any,Any}) = :matrix
+@noinline function matmul_size_check(sizeA::Tuple{Integer,Vararg{Integer}}, sizeB::Tuple{Integer,Vararg{Integer}})
+    strA = _vec_or_mat_str(sizeA)
+    strB = _vec_or_mat_str(sizeB)
+    szA2 = get(sizeA, 2, 1)
+    if szA2 != sizeB[1]
+        throw(DimensionMismatch(
+            lazy"incompatible dimensions for matrix multiplication: tried to multiply a $strA of size $sizeA with a $strB of size $sizeB.",
+            )
+        )
+    end
+    return nothing
+end
+@noinline function matmul_size_check(sizeC::Tuple{Integer,Vararg{Integer}}, sizeA::Tuple{Integer,Vararg{Integer}}, sizeB::Tuple{Integer,Vararg{Integer}})
+    strA = _vec_or_mat_str(sizeA)
+    strB = _vec_or_mat_str(sizeB)
+    szB2 = get(sizeB, 2, 1)
+    szC2 = get(sizeC, 2, 1)
+    matmul_size_check(sizeA, sizeB)
+    if sizeC[1] != sizeA[1] || szC2 != szB2
+        destsize = length(sizeB) == length(sizeC) == 1 ? (sizeA[1],) : (sizeA[1], szB2)
+        throw(DimensionMismatch(
+                LazyString(
+                "incompatible destination size: ",
+                lazy"the destination of size $sizeC is incomatible with the multiplication of a $strA of size $(sizeA) and a $strB of size $(sizeB). ",
+                lazy"The destination must be of size $destsize."
+               )
+            )
+        )
+    end
+    return nothing
+end
+
 # We may inline the matmul2x2! and matmul3x3! calls for `α == true`
 # to simplify the @stable_muladdmul branches
 function matmul2x2or3x3_nonzeroalpha!(C, tA, tB, A, B, α, β)
@@ -441,9 +475,7 @@ Base.@constprop :aggressive function generic_matmatmul_wrapper!(C::StridedMatrix
     mA, nA = lapack_size(tA, A)
     mB, nB = lapack_size(tB, B)
     if any(iszero, size(A)) || any(iszero, size(B)) || iszero(α)
-        if size(C) != (mA, nB)
-            throw(DimensionMismatch(lazy"C has dimensions $(size(C)), should have ($mA,$nB)"))
-        end
+        matmul_size_check(size(C), (mA, nA), (mB, nB))
         return _rmul_or_fill!(C, β)
     end
     matmul2x2or3x3_nonzeroalpha!(C, tA, tB, A, B, α, β) && return C
@@ -475,9 +507,7 @@ Base.@constprop :aggressive function generic_matmatmul_wrapper!(C::StridedMatrix
     mA, nA = lapack_size(tA, A)
     mB, nB = lapack_size(tB, B)
     if any(iszero, size(A)) || any(iszero, size(B)) || iszero(α)
-        if size(C) != (mA, nB)
-            throw(DimensionMismatch(lazy"C has dimensions $(size(C)), should have ($mA,$nB)"))
-        end
+        matmul_size_check(size(C), (mA, nA), (mB, nB))
         return _rmul_or_fill!(C, β)
     end
     matmul2x2or3x3_nonzeroalpha!(C, tA, tB, A, B, α, β) && return C
@@ -571,10 +601,7 @@ Base.@constprop :aggressive function gemv!(y::StridedVector{T}, tA::AbstractChar
                 A::StridedVecOrMat{T}, x::StridedVector{T},
                α::Number=true, β::Number=false) where {T<:BlasFloat}
     mA, nA = lapack_size(tA, A)
-    nA != length(x) &&
-        throw(DimensionMismatch(lazy"second dimension of matrix, $nA, does not match length of input vector, $(length(x))"))
-    mA != length(y) &&
-        throw(DimensionMismatch(lazy"first dimension of matrix, $mA, does not match length of output vector, $(length(y))"))
+    matmul_size_check(size(y), (mA, nA), size(x))
     mA == 0 && return y
     nA == 0 && return _rmul_or_fill!(y, β)
     alpha, beta = promote(α, β, zero(T))
@@ -602,10 +629,7 @@ end
 Base.@constprop :aggressive function gemv!(y::StridedVector{Complex{T}}, tA::AbstractChar, A::StridedVecOrMat{Complex{T}}, x::StridedVector{T},
     α::Number = true, β::Number = false) where {T<:BlasReal}
     mA, nA = lapack_size(tA, A)
-    nA != length(x) &&
-        throw(DimensionMismatch(lazy"second dimension of matrix, $nA, does not match length of input vector, $(length(x))"))
-    mA != length(y) &&
-        throw(DimensionMismatch(lazy"first dimension of matrix, $mA, does not match length of output vector, $(length(y))"))
+    matmul_size_check(size(y), (mA, nA), size(x))
     mA == 0 && return y
     nA == 0 && return _rmul_or_fill!(y, β)
     alpha, beta = promote(α, β, zero(T))
@@ -626,10 +650,7 @@ Base.@constprop :aggressive function gemv!(y::StridedVector{Complex{T}}, tA::Abs
         A::StridedVecOrMat{T}, x::StridedVector{Complex{T}},
         α::Number = true, β::Number = false) where {T<:BlasReal}
     mA, nA = lapack_size(tA, A)
-    nA != length(x) &&
-        throw(DimensionMismatch(lazy"second dimension of matrix, $nA, does not match length of input vector, $(length(x))"))
-    mA != length(y) &&
-        throw(DimensionMismatch(lazy"first dimension of matrix, $mA, does not match length of output vector, $(length(y))"))
+    matmul_size_check(size(y), (mA, nA), size(x))
     mA == 0 && return y
     nA == 0 && return _rmul_or_fill!(y, β)
     alpha, beta = promote(α, β, zero(T))
@@ -748,9 +769,7 @@ Base.@constprop :aggressive function gemm_wrapper!(C::StridedVecOrMat{T}, tA::Ab
     mA, nA = lapack_size(tA, A)
     mB, nB = lapack_size(tB, B)
 
-    if nA != mB
-        throw(DimensionMismatch(lazy"A has dimensions ($mA,$nA) but B has dimensions ($mB,$nB)"))
-    end
+    matmul_size_check(size(C), (mA, nA), (mB, nB))
 
     if C === A || B === C
         throw(ArgumentError("output matrix must not be aliased with input matrix"))
@@ -778,9 +797,7 @@ Base.@constprop :aggressive function gemm_wrapper!(C::StridedVecOrMat{Complex{T}
     mA, nA = lapack_size(tA, A)
     mB, nB = lapack_size(tB, B)
 
-    if nA != mB
-        throw(DimensionMismatch(lazy"A has dimensions ($mA,$nA) but B has dimensions ($mB,$nB)"))
-    end
+    matmul_size_check(size(C), (mA, nA), (mB, nB))
 
     if C === A || B === C
         throw(ArgumentError("output matrix must not be aliased with input matrix"))
@@ -940,14 +957,8 @@ function _generic_matvecmul!(C::AbstractVector, tA, A::AbstractVecOrMat, B::Abst
                             alpha::Number, beta::Number)
     require_one_based_indexing(C, A, B)
     @assert tA in ('N', 'T', 'C')
-    mB = length(B)
     mA, nA = lapack_size(tA, A)
-    if mB != nA
-        throw(DimensionMismatch(lazy"matrix A has dimensions ($mA,$nA), vector B has length $mB"))
-    end
-    if mA != length(C)
-        throw(DimensionMismatch(lazy"result C has length $(length(C)), needs length $mA"))
-    end
+    matmul_size_check(size(C), (mA, nA), size(B))
 
     if tA == 'T'  # fastest case
         __generic_matvecmul!(transpose, C, A, B, alpha, beta)
@@ -979,21 +990,7 @@ _generic_matmatmul!(C::AbstractVecOrMat, A::AbstractVecOrMat, B::AbstractVecOrMa
 
 @noinline function _generic_matmatmul!(C::AbstractVecOrMat{R}, A::AbstractVecOrMat, B::AbstractVecOrMat,
                              alpha::Number, beta::Number) where {R}
-    AxM = axes(A, 1)
-    AxK = axes(A, 2) # we use two `axes` calls in case of `AbstractVector`
-    BxK = axes(B, 1)
-    BxN = axes(B, 2)
-    CxM = axes(C, 1)
-    CxN = axes(C, 2)
-    if AxM != CxM
-        throw(DimensionMismatch(lazy"matrix A has axes ($AxM,$AxK), matrix C has axes ($CxM,$CxN)"))
-    end
-    if AxK != BxK
-        throw(DimensionMismatch(lazy"matrix A has axes ($AxM,$AxK), matrix B has axes ($BxK,$CxN)"))
-    end
-    if BxN != CxN
-        throw(DimensionMismatch(lazy"matrix B has axes ($BxK,$BxN), matrix C has axes ($CxM,$CxN)"))
-    end
+    matmul_size_check(size(C), size(A), size(B))
     __generic_matmatmul!(C, A, B, alpha, beta, Val(isbitstype(R) && sizeof(R) ≤ 16))
     return C
 end

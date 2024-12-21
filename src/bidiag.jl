@@ -497,7 +497,7 @@ end
 
 # B .= A * B
 function lmul!(A::Bidiagonal, B::AbstractVecOrMat)
-    _muldiag_size_check(size(A), size(B))
+    matmul_size_check(size(A), size(B))
     (; dv, ev) = A
     if A.uplo == 'U'
         for k in axes(B,2)
@@ -518,7 +518,7 @@ function lmul!(A::Bidiagonal, B::AbstractVecOrMat)
 end
 # B .= D * B
 function lmul!(D::Diagonal, B::Bidiagonal)
-    _muldiag_size_check(size(D), size(B))
+    matmul_size_check(size(D), size(B))
     (; dv, ev) = B
     isL = B.uplo == 'L'
     dv[1] = D.diag[1] * dv[1]
@@ -530,7 +530,7 @@ function lmul!(D::Diagonal, B::Bidiagonal)
 end
 # B .= B * A
 function rmul!(B::AbstractMatrix, A::Bidiagonal)
-    _muldiag_size_check(size(A), size(B))
+    matmul_size_check(size(A), size(B))
     (; dv, ev) = A
     if A.uplo == 'U'
         for k in reverse(axes(dv,1)[2:end])
@@ -555,7 +555,7 @@ function rmul!(B::AbstractMatrix, A::Bidiagonal)
 end
 # B .= B * D
 function rmul!(B::Bidiagonal, D::Diagonal)
-    _muldiag_size_check(size(B), size(D))
+    matmul_size_check(size(B), size(D))
     (; dv, ev) = B
     isU = B.uplo == 'U'
     dv[1] *= D.diag[1]

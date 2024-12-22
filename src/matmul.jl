@@ -521,8 +521,8 @@ Base.@constprop :aggressive function generic_matmatmul_wrapper!(C::StridedMatrix
                                     α::Number, β::Number, val::BlasFlag.SymmHemmGeneric) where {T<:BlasFloat}
     mA, nA = lapack_size(tA, A)
     mB, nB = lapack_size(tB, B)
+    matmul_size_check(size(C), (mA, nA), (mB, nB))
     if any(iszero, size(A)) || any(iszero, size(B)) || iszero(α)
-        matmul_size_check(size(C), (mA, nA), (mB, nB))
         return _rmul_or_fill!(C, β)
     end
     matmul2x2or3x3_nonzeroalpha!(C, tA, tB, A, B, α, β) && return C
@@ -701,7 +701,7 @@ Base.@constprop :aggressive function syrk_wrapper!(C::StridedMatrix{T}, tA::Abst
         tAt = 'T'
     end
     if nC != mA
-        throw(DimensionMismatch(lazy"output matrix has size: $(nC), but should have size $(mA)"))
+        throw(DimensionMismatch(lazy"output matrix has size: $(size(C)), but should have size $((mA, mA))"))
     end
 
     # BLAS.syrk! only updates symmetric C
@@ -735,7 +735,7 @@ Base.@constprop :aggressive function herk_wrapper!(C::Union{StridedMatrix{T}, St
         tAt = 'C'
     end
     if nC != mA
-        throw(DimensionMismatch(lazy"output matrix has size: $(nC), but should have size $(mA)"))
+        throw(DimensionMismatch(lazy"output matrix has size: $(size(C)), but should have size $((mA, mA))"))
     end
 
     # Result array does not need to be initialized as long as beta==0
@@ -1067,11 +1067,12 @@ end
 
 function __matmul_checks(C, A, B, sz)
     require_one_based_indexing(C, A, B)
+    matmul_size_check(size(C), size(A), size(B))
     if C === A || B === C
         throw(ArgumentError("output matrix must not be aliased with input matrix"))
     end
     if !(size(A) == size(B) == size(C) == sz)
-        throw(DimensionMismatch(lazy"A has size $(size(A)), B has size $(size(B)), C has size $(size(C))"))
+        throw(DimensionMismatch(lazy"expected size: $sz, but got $(size(A))"))
     end
     return nothing
 end

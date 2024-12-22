@@ -636,7 +636,7 @@ A2img   = randn(n, n)/2
             # Test error estimates
             if eltya != BigFloat && eltyb != BigFloat
                 for i = 1:2
-                    @test  norm(x[:,1] .- 1) <= errorbounds(UpperTriangular(A), x, b)[1][i]
+                    @test norm(x[:,1] .- 1) <= errorbounds(UpperTriangular(A), x, b)[1][i]
                 end
             end
 
@@ -657,14 +657,14 @@ A2img   = randn(n, n)/2
         end
 
         @testset "Solve lower triangular system" begin
-            Atri = UpperTriangular(lu(A).U) |> t -> eltya <: Complex && eltyb <: Real ? real(t) : t # Here the triangular matrix can't be too badly conditioned
+            Atri = LowerTriangular(lu(A).L) |> t -> eltya <: Complex && eltyb <: Real ? real(t) : t # Here the triangular matrix can't be too badly conditioned
             b = convert(Matrix{eltyb}, Matrix(Atri)*fill(1., n, 2))
             x = Atri \ b
 
             # Test error estimates
             if eltya != BigFloat && eltyb != BigFloat
                 for i = 1:2
-                    @test  norm(x[:,1] .- 1) <= errorbounds(UpperTriangular(A), x, b)[1][i]
+                    @test norm(x[:,1] .- 1) <= errorbounds(LowerTriangular(A), x, b)[1][i]
                 end
             end
 
@@ -686,13 +686,14 @@ A2img   = randn(n, n)/2
     end
 end
 
-# Issue 10742 and similar
-@test istril(UpperTriangular(diagm(0 => [1,2,3,4])))
-@test istriu(LowerTriangular(diagm(0 => [1,2,3,4])))
-@test isdiag(UpperTriangular(diagm(0 => [1,2,3,4])))
-@test isdiag(LowerTriangular(diagm(0 => [1,2,3,4])))
-@test !isdiag(UpperTriangular(rand(4, 4)))
-@test !isdiag(LowerTriangular(rand(4, 4)))
+@testset "triangularity/diagonality of triangular views (#10742)" begin
+    @test istril(UpperTriangular(diagm(0 => [1,2,3,4])))
+    @test istriu(LowerTriangular(diagm(0 => [1,2,3,4])))
+    @test isdiag(UpperTriangular(diagm(0 => [1,2,3,4])))
+    @test isdiag(LowerTriangular(diagm(0 => [1,2,3,4])))
+    @test !isdiag(UpperTriangular(rand(4, 4)))
+    @test !isdiag(LowerTriangular(rand(4, 4)))
+end
 
 # Test throwing in fallbacks for non BlasFloat/BlasComplex in A_rdiv_Bx!
 let n = 5

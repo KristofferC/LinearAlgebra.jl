@@ -1,14 +1,14 @@
-triangular
 triangular2
+triangular3
 addmul
+unitful
 bidiag
-bitarray
 matmul
 dense
 symmetric
 diagonal
-unitful
 special
+triangular
 qr
 cholesky
 blas
@@ -31,3 +31,4 @@ factorization
 abstractq
 ldlt
 symmetriceigen
+bitarray

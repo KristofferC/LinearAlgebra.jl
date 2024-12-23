@@ -1282,6 +1282,7 @@ end
     T = cbrt(Symmetric(S,:U))
     @test T*T*T ≈ S
     @test eltype(S) == eltype(T)
+    @test cbrt(Array(Symmetric(S,:U))) == T
     # Real valued symmetric
     S =  (A -> (A+A')/2)(randn(N,N))
     T = cbrt(Symmetric(S,:L))

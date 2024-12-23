@@ -1071,8 +1071,9 @@ function __matmul_checks(C, A, B, sz)
     if C === A || B === C
         throw(ArgumentError("output matrix must not be aliased with input matrix"))
     end
-    if !(size(A) == size(B) == size(C) == sz)
-        throw(DimensionMismatch(lazy"expected size: $sz, but got $(size(A))"))
+    if !(size(A) == size(B) == sz) # if A and B are both of size sz, C must also be of size sz for the matmul_size_check to pass
+        pos, mismatched_sz = size(A) != sz ? ("first", size(A)) : ("second", size(B))
+        throw(DimensionMismatch(lazy"expected size: $sz, but got size $mismatched_sz for the $pos matrix"))
     end
     return nothing
 end

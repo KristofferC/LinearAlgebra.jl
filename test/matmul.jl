@@ -1158,6 +1158,9 @@ end
     @test_throws "incompatible destination size" mul!(zeros(1,0), zeros(1,5), zeros(5,2))
     @test_throws "incompatible destination size" mul!(zeros(0,0), zeros(1,5), zeros(5))
     @test_throws "incompatible destination size" mul!(zeros(0), zeros(1,5), zeros(5))
+
+    @test_throws "expected size: (2, 2)" LinearAlgebra.matmul2x2!(zeros(2,2), 'N', 'N', zeros(2,3), zeros(3,2))
+    @test_throws "expected size: (2, 2)" LinearAlgebra.matmul2x2!(zeros(2,3), 'N', 'N', zeros(2,2), zeros(2,3))
 end
 
 end # module TestMatmul

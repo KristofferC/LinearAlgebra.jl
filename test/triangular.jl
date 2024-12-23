@@ -1429,4 +1429,18 @@ end
     @test rdiv!(B2v, U) ≈ rdiv!(B2vc, U)
 end
 
+@testset "error messages in matmul with mismatched matrix sizes" begin
+    for T in (Int, Float64)
+        A = UpperTriangular(ones(T,2,2))
+        B = ones(T,3,3)
+        C = similar(B)
+        @test_throws "incompatible dimensions for matrix multiplication" mul!(C, A, B)
+        @test_throws "incompatible dimensions for matrix multiplication" mul!(C, B, A)
+        B = Array(A)
+        C = similar(B, (4,4))
+        @test_throws "incompatible destination size" mul!(C, A, B)
+        @test_throws "incompatible destination size" mul!(C, B, A)
+    end
+end
+
 end # module TestTriangular

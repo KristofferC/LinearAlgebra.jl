@@ -10,10 +10,10 @@ symmetric
 diagonal
 lu
 bunchkaufman
+cholesky
 tridiag
 triangular
 qr
-cholesky
 blas
 uniformscaling
 structuredbroadcast

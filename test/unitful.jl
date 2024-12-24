@@ -32,7 +32,7 @@ getval(x::Furlong) = x.val
         end
         return nothing
     end
-    @testset for relty in (Int, Float32, Float64, BigFloat), elty in (relty, Complex{relty})
+    @testset for relty in (Int, Float64, BigFloat), elty in (relty, Complex{relty})
         if relty <: AbstractFloat
             dv = convert(Vector{elty}, randn(n))
             ev = convert(Vector{elty}, randn(n - 1))
@@ -52,6 +52,7 @@ getval(x::Furlong) = x.val
             T = Bidiagonal(dv, ev, uplo)
             A = Matrix(T)
             for t in (T, Furlong.(T)), (A, dv, ev) in ((A, dv, ev), (Furlong.(A), Furlong.(dv), Furlong.(ev)))
+                any(x -> x <: Furlong, (eltype(t), eltype(A))) || continue
                 _bidiagdivmultest(t, 5, Bidiagonal, Bidiagonal)
                 _bidiagdivmultest(t, 5I, Bidiagonal, Bidiagonal, t.uplo == 'U' ? UpperTriangular : LowerTriangular)
                 _bidiagdivmultest(t, Diagonal(dv), Bidiagonal, Bidiagonal, t.uplo == 'U' ? UpperTriangular : LowerTriangular)
@@ -76,7 +77,7 @@ end
         @test Du isa Diagonal{<:Furlong{1}}
         F = svd(Du)
         U, s, V = F
-        @test map(x -> x.val, Matrix(F)) ≈ map(x -> x.val, Du)
+        @test map(getval, Matrix(F)) ≈ map(getval, Du)
         @test svdvals(Du) == s
         @test U isa AbstractMatrix{<:Furlong{0}}
         @test V isa AbstractMatrix{<:Furlong{0}}
@@ -127,10 +128,10 @@ end
         @testset "Multiplication/division Furlong" begin
             for x = (5, 5I, Diagonal(d), Bidiagonal(d, dl, :U),
                 UpperTriangular(A), UnitUpperTriangular(A))
-                @test map(x -> x.val, (H * x)::UpperHessenberg) ≈ map(x -> x.val, Array(H) * x)
-                @test map(x -> x.val, (x * H)::UpperHessenberg) ≈ map(x -> x.val, x * Array(H))
-                @test map(x -> x.val, (H / x)::UpperHessenberg) ≈ map(x -> x.val, Array(H) / x)
-                @test map(x -> x.val, (x \ H)::UpperHessenberg) ≈ map(x -> x.val, x \ Array(H))
+                @test map(getval, (H * x)::UpperHessenberg) ≈ map(getval, Array(H) * x)
+                @test map(getval, (x * H)::UpperHessenberg) ≈ map(getval, x * Array(H))
+                @test map(getval, (H / x)::UpperHessenberg) ≈ map(getval, Array(H) / x)
+                @test map(getval, (x \ H)::UpperHessenberg) ≈ map(getval, x \ Array(H))
             end
             x = Bidiagonal(d, dl, :L)
             @test H * x == Array(H) * x

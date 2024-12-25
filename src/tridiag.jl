@@ -148,7 +148,13 @@ function Matrix{T}(M::SymTridiagonal) where T
     end
     return Mf
 end
-Matrix(M::SymTridiagonal{T}) where {T} = Matrix{promote_type(T, typeof(zero(T)))}(M)
+function Matrix(M::SymTridiagonal{T}) where {T}
+    if haszero(T)
+        Matrix{promote_type(T, typeof(zero(T)))}(M)
+    else
+        convert(Matrix, [x for x in M])
+    end
+end
 Array(M::SymTridiagonal) = Matrix(M)
 
 size(A::SymTridiagonal) = (n = length(A.dv); (n, n))
@@ -620,7 +626,13 @@ function Matrix{T}(M::Tridiagonal) where {T}
     end
     A
 end
-Matrix(M::Tridiagonal{T}) where {T} = Matrix{promote_type(T, typeof(zero(T)))}(M)
+function Matrix(M::Tridiagonal{T}) where {T}
+    if haszero(T)
+        Matrix{promote_type(T, typeof(zero(T)))}(M)
+    else
+        convert(Matrix, [x for x in M])
+    end
+end
 Array(M::Tridiagonal) = Matrix(M)
 
 similar(M::Tridiagonal, ::Type{T}) where {T} = Tridiagonal(similar(M.dl, T), similar(M.d, T), similar(M.du, T))

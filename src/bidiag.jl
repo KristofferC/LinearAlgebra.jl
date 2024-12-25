@@ -198,7 +198,13 @@ function Matrix{T}(A::Bidiagonal) where T
     end
     return B
 end
-Matrix(A::Bidiagonal{T}) where {T} = Matrix{promote_type(T, typeof(zero(T)))}(A)
+function Matrix(A::Bidiagonal{T}) where {T}
+    if haszero(T)
+        Matrix{promote_type(T, typeof(zero(T)))}(A)
+    else
+        convert(Matrix, [x for x in A])
+    end
+end
 Array(A::Bidiagonal) = Matrix(A)
 promote_rule(::Type{Matrix{T}}, ::Type{<:Bidiagonal{S}}) where {T,S} =
     @isdefined(T) && @isdefined(S) ? Matrix{promote_type(T,S)} : Matrix

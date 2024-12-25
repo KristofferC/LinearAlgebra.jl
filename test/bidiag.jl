@@ -1164,4 +1164,11 @@ end
     @test opnorm(B, Inf) == opnorm(Matrix(B), Inf)
 end
 
+@testset "Matrix conversion without zero" begin
+    D = Bidiagonal(fill(ones(2,2), 4), fill(ones(2,2), 3), :U)
+    M = Matrix(D)
+    @test M isa Matrix{eltype(D)}
+    @test M == D
+end
+
 end # module TestBidiagonal

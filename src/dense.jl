@@ -890,7 +890,9 @@ julia> log(A)
 """
 function log(A::AbstractMatrix)
     # If possible, use diagonalization
-    if ishermitian(A)
+    if isdiag(A)
+        return applydiagonal(log, A)
+    elseif ishermitian(A)
         logHermA = log(Hermitian(A))
         return ishermitian(logHermA) ? copytri!(parent(logHermA), 'U', true) : parent(logHermA)
     elseif istriu(A)
@@ -969,7 +971,9 @@ sqrt(::AbstractMatrix)
 
 function sqrt(A::AbstractMatrix{T}) where {T<:Union{Real,Complex}}
     if checksquare(A) == 0
-        return copy(A)
+        return copy(float(A))
+    elseif isdiag(A)
+        return applydiagonal(sqrt, A)
     elseif ishermitian(A)
         sqrtHermA = sqrt(Hermitian(A))
         return ishermitian(sqrtHermA) ? copytri!(parent(sqrtHermA), 'U', true) : parent(sqrtHermA)
@@ -1035,7 +1039,9 @@ true
 """
 function cbrt(A::AbstractMatrix{<:Real})
     if checksquare(A) == 0
-        return copy(A)
+        return copy(float(A))
+    elseif isdiag(A)
+        return applydiagonal(cbrt, A)
     elseif issymmetric(A)
         return cbrt(Symmetric(A, :U))
     else

@@ -67,15 +67,19 @@ function evalpoly!(Y::AbstractMatrix, X::AbstractMatrix, p::Union{AbstractVector
     return Y
 end
 
+# fallback cases: call out-of-place _evalpoly
 Base.evalpoly(X::AbstractMatrix, p::Tuple) = _evalpoly(X, p)
 Base.evalpoly(X::AbstractMatrix, ::Tuple{}) = zero(one(X)) # dimensionless zero, i.e. 0 * X^0
 Base.evalpoly(X::AbstractMatrix, p::AbstractVector) = _evalpoly(X, p)
 
-Base.evalpoly(X::StridedMatrix{<:Number}, p::Tuple{Union{Number, UniformScaling}, Vararg{Union{Number, UniformScaling}}}) =
-    evalpoly!(similar(X, Base.promote_op(*, typeof(one(eltype(X))), typeof(_scalarval(p[begin])))), X, p)
-Base.evalpoly(X::StridedMatrix{<:Number}, p::Tuple{AbstractMatrix{<:Number}, Vararg{AbstractMatrix{<:Number}}}) =
-    evalpoly!(similar(X, Base.promote_op(*, typeof(one(eltype(X))), eltype(p[begin]))), X, p)
+# optimized in-place cases, limited to types like homogeneous tuples with length > 1
+# where we can reliably deduce the output type (= type of X * p[2]),
+# and restricted to StridedMatrix (for now) so that we can be more confident that this is a performance win:
+Base.evalpoly(X::StridedMatrix{<:Number}, p::Tuple{T, T, Vararg{T}}) where {T<:Union{Number, UniformScaling}} =
+    evalpoly!(similar(X, Base.promote_op(*, eltype(X), typeof(_scalarval(p[2])))), X, p)
+Base.evalpoly(X::StridedMatrix{<:Number}, p::Tuple{AbstractMatrix{T}, AbstractMatrix{T}, Vararg{AbstractMatrix{T}}}) where {T<:Number} =
+    evalpoly!(similar(X, Base.promote_op(*, eltype(X), T)), X, p)
 Base.evalpoly(X::StridedMatrix{<:Number}, p::AbstractVector{<:Union{Number, UniformScaling}}) =
-    isempty(p) ? _evalpoly(X, p) : evalpoly!(similar(X, Base.promote_op(*, typeof(one(eltype(X))), typeof(_scalarval(p[begin])))), X, p)
+    length(p) < 2 ? _evalpoly(X, p) : evalpoly!(similar(X, Base.promote_op(*, eltype(X), typeof(_scalarval(p[begin+1])))), X, p)
 Base.evalpoly(X::StridedMatrix{<:Number}, p::AbstractVector{<:AbstractMatrix{<:Number}}) =
-    isempty(p) ? _evalpoly(X, p) : evalpoly!(similar(X, Base.promote_op(*, typeof(one(eltype(X))), eltype(p[begin]))), X, p)
+    length(p) < 2 ? _evalpoly(X, p) : evalpoly!(similar(X, Base.promote_op(*, eltype(X), eltype(p[begin+1]))), X, p)

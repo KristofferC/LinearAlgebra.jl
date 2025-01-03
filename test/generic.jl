@@ -837,4 +837,28 @@ end
     end
 end
 
+using LinearAlgebra: _evalpoly
+naive_evalpoly(X, p) = sum(X^(i-1) * p[i] for i=1:length(p))
+
+@testset "evalpoly" begin
+    for X in ([1 2 3;4 5 6;7 8 9], UpperTriangular([1 2 3;0 5 6;0 0 9]), SymTridiagonal([1,2,3],[4,5]))
+        @test @inferred(evalpoly(X, ())) == zero(X) == evalpoly(X, Int[])
+        @test @inferred(evalpoly(X, (17,))) == one(X) * 17
+        @test @inferred(_evalpoly(X, [1,2,3,4])) == @inferred(evalpoly(X, [1,2,3,4])) ==
+              @inferred(evalpoly(X, (1,2,3,4))) ==
+              naive_evalpoly(X, [1,2,3,4]) == 1*one(X) + 2*X + 3X^2 + 4X^3
+        @test typeof(evalpoly(X, [1,2,3])) == typeof(evalpoly(X, (1,2,3))) == typeof(_evalpoly(X, [1,2,3])) ==
+              typeof(X * X)
+
+        for N in (1,2,4), p in (rand(-10:10, N), UniformScaling.(rand(-10:10, N)), [rand(-5:5,3,3) for _ = 1:N])
+            @test _evalpoly(X, p) == evalpoly(X, p) == evalpoly(X, Tuple(p)) == naive_evalpoly(X, p)
+        end
+        for N in (1,2,4), p in (rand(N), UniformScaling.(rand(N)), [rand(3,3) for _ = 1:N])
+            @test _evalpoly(X, p) ≈ evalpoly(X, p) ≈ evalpoly(X, Tuple(p)) ≈ naive_evalpoly(X, p)
+        end
+
+        @test_throws MethodError evalpoly(X, [])
+    end
+end
+
 end # module TestGeneric

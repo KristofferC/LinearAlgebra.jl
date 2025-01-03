@@ -30,10 +30,13 @@ n = 5
         F = qr(A)
         Q = MyQ(F.Q)
         @test ndims(Q) == 2
+        @test eltype([A, Q]) == Union{AbstractQ{T}, AbstractMatrix{T}} # promotion
         T <: Real && @test transpose(Q) == adjoint(Q)
         T <: Complex && @test_throws ErrorException transpose(Q)
         @test convert(AbstractQ{complex(T)}, Q) isa MyQ{complex(T)}
         @test convert(AbstractQ{complex(T)}, Q') isa AdjointQ{<:complex(T),<:MyQ{complex(T)}}
+        @test Q == Matrix(Q) == Q
+        @test Q ≈ Matrix(Q) ≈ Q
         @test *(Q) == Q
         @test Q*I ≈ Q.Q*I rtol=2eps(real(T))
         @test Q'*I ≈ Q.Q'*I rtol=2eps(real(T))
@@ -47,6 +50,7 @@ n = 5
         @test (Q')^2 ≈ Q'*Q'
         @test abs(det(Q)) ≈ 1
         @test logabsdet(Q)[1] ≈ 0 atol=2n*eps(real(T))
+        @test logdet(Q) ≈ log(sign(det(Q)))
         y = rand(T, n)
         @test Q * y ≈ Q.Q * y ≈ Q' \ y ≈ ldiv!(Q', copy(y)) ≈ ldiv!(zero(y), Q', y)
         @test Q'y ≈ Q.Q' * y ≈ Q \ y ≈ ldiv!(Q, copy(y)) ≈ ldiv!(zero(y), Q, y)

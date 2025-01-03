@@ -277,6 +277,7 @@ QRPackedQ(factors::AbstractMatrix{T}, τ::AbstractVector{T}) where {T} =
     QRPackedQ{T,typeof(factors),typeof(τ)}(factors, τ)
 QRPackedQ{T}(factors::AbstractMatrix, τ::AbstractVector) where {T} =
     QRPackedQ(convert(AbstractMatrix{T}, factors), convert(AbstractVector{T}, τ))
+QRPackedQ{T}(Q::QRPackedQ) where {T} = QRPackedQ{T}(Q.factors, Q.τ)
 # backwards-compatible constructors (remove with Julia 2.0)
 @deprecate(QRPackedQ{T,S}(factors::AbstractMatrix{T}, τ::AbstractVector{T}) where {T,S},
            QRPackedQ{T,S,typeof(τ)}(factors, τ), false)
@@ -300,12 +301,11 @@ QRCompactWYQ(factors::AbstractMatrix{S}, T::AbstractMatrix{S}) where {S} =
     QRCompactWYQ{S,typeof(factors),typeof(T)}(factors, T)
 QRCompactWYQ{S}(factors::AbstractMatrix, T::AbstractMatrix) where {S} =
     QRCompactWYQ(convert(AbstractMatrix{S}, factors), convert(AbstractMatrix{S}, T))
+QRCompactWYQ{S}(Q::QRCompactWYQ) where {S} = QRCompactWYQ{S}(Q.factors, Q.T)
 # backwards-compatible constructors (remove with Julia 2.0)
 @deprecate(QRCompactWYQ{S,M}(factors::AbstractMatrix{S}, T::AbstractMatrix{S}) where {S,M},
            QRCompactWYQ{S,M,typeof(T)}(factors, T), false)
 
-QRPackedQ{T}(Q::QRPackedQ) where {T} = QRPackedQ(convert(AbstractMatrix{T}, Q.factors), convert(AbstractVector{T}, Q.τ))
-QRCompactWYQ{S}(Q::QRCompactWYQ) where {S} = QRCompactWYQ(convert(AbstractMatrix{S}, Q.factors), convert(AbstractMatrix{S}, Q.T))
 
 # override generic square fallback
 Matrix{T}(Q::Union{QRCompactWYQ{S},QRPackedQ{S}}) where {T,S} =

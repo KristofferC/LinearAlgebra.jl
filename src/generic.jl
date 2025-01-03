@@ -2160,7 +2160,7 @@ function evalpoly!(Y::AbstractMatrix, X::AbstractMatrix, p::Union{AbstractVector
 end
 
 Base.evalpoly(X::AbstractMatrix, p::Tuple) = _evalpoly(X, p)
-Base.evalpoly(X::AbstractMatrix, ::Tuple{}) = zero(one(X)) # dimensionless zero, i.e. 0 * x^0
+Base.evalpoly(X::AbstractMatrix, ::Tuple{}) = zero(one(X)) # dimensionless zero, i.e. 0 * X^0
 Base.evalpoly(X::AbstractMatrix, p::AbstractVector) = _evalpoly(X, p)
 
 Base.evalpoly(X::StridedMatrix{<:Number}, p::Tuple{Union{Number, UniformScaling}, Vararg{Union{Number, UniformScaling}}}) =

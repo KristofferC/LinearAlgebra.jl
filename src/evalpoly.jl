@@ -5,7 +5,7 @@ function _evalpoly(X::AbstractMatrix, p)
     Base.require_one_based_indexing(p)
     p0 = isempty(p) ? Base.reduce_empty_iter(+, p) : p[end]
     Xone = one(X)
-    S = Base.promote_op(*, typeof(Xone), typeof(Xone))(Xone) * p0
+    S = convert(Base.promote_op(*, typeof(Xone), typeof(Xone)), Xone) * p0
     for i = length(p)-1:-1:1
         S = X * S + @inbounds(p[i] isa AbstractMatrix ? p[i] : p[i] * I)
     end

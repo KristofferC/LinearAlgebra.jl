@@ -1094,7 +1094,7 @@ end
 
 for TC in (:AbstractVector, :AbstractMatrix)
     @eval @inline function _mul!(C::$TC, A::AbstractTriangular, B::AbstractVector, alpha::Number, beta::Number)
-        check_A_mul_B!_sizes(size(C), size(A), size(B))
+        matmul_size_check(size(C), size(A), size(B))
         if isone(alpha) && iszero(beta)
             return _trimul!(C, A, B)
         else
@@ -1107,7 +1107,7 @@ for (TA, TB) in ((:AbstractTriangular, :AbstractMatrix),
                     (:AbstractTriangular, :AbstractTriangular)
                 )
     @eval @inline function _mul!(C::AbstractMatrix, A::$TA, B::$TB, alpha::Number, beta::Number)
-        check_A_mul_B!_sizes(size(C), size(A), size(B))
+        matmul_size_check(size(C), size(A), size(B))
         if isone(alpha) && iszero(beta)
             return _trimul!(C, A, B)
         else
@@ -1341,7 +1341,7 @@ end
 ## Generic triangular multiplication
 function generic_trimatmul!(C::AbstractVecOrMat, uploc, isunitc, tfun::Function, A::AbstractMatrix, B::AbstractVecOrMat)
     require_one_based_indexing(C, A, B)
-    check_A_mul_B!_sizes(size(C), size(A), size(B))
+    matmul_size_check(size(C), size(A), size(B))
     oA = oneunit(eltype(A))
     unit = isunitc == 'U'
     @inbounds if uploc == 'U'
@@ -1394,7 +1394,7 @@ end
 # conjugate cases
 function generic_trimatmul!(C::AbstractVecOrMat, uploc, isunitc, ::Function, xA::AdjOrTrans, B::AbstractVecOrMat)
     require_one_based_indexing(C, xA, B)
-    check_A_mul_B!_sizes(size(C), size(xA), size(B))
+    matmul_size_check(size(C), size(xA), size(B))
     A = parent(xA)
     oA = oneunit(eltype(A))
     unit = isunitc == 'U'
@@ -1424,7 +1424,7 @@ end
 
 function generic_mattrimul!(C::AbstractMatrix, uploc, isunitc, tfun::Function, A::AbstractMatrix, B::AbstractMatrix)
     require_one_based_indexing(C, A, B)
-    check_A_mul_B!_sizes(size(C), size(A), size(B))
+    matmul_size_check(size(C), size(A), size(B))
     oB = oneunit(eltype(B))
     unit = isunitc == 'U'
     @inbounds if uploc == 'U'
@@ -1477,7 +1477,7 @@ end
 # conjugate cases
 function generic_mattrimul!(C::AbstractMatrix, uploc, isunitc, ::Function, A::AbstractMatrix, xB::AdjOrTrans)
     require_one_based_indexing(C, A, xB)
-    check_A_mul_B!_sizes(size(C), size(A), size(xB))
+    matmul_size_check(size(C), size(A), size(xB))
     B = parent(xB)
     oB = oneunit(eltype(B))
     unit = isunitc == 'U'

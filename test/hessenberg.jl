@@ -305,4 +305,12 @@ end
     end
 end
 
+@testset "Hessenberg factorization of Q" begin
+    for T in (Float32, Float64, ComplexF32, ComplexF64)
+        Q1, H1 = hessenberg(randn(T,5,5))
+        Q2, H2 = hessenberg(Q1)
+        @test Q2'Q2 ≈ I
+    end
+end
+    
 end # module TestHessenberg

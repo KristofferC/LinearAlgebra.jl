@@ -234,4 +234,13 @@ end
 
 end
 
+@testset "LQ factorization of Q" begin
+    for T in (Float32, Float64, ComplexF32, ComplexF64)
+        L1, Q1 = lq(randn(T, 5, 5))
+        L2, Q2 = lq(Q1)
+        @test Matrix(Q1) ≈ Matrix(Q2)
+        @test L2 ≈ I
+    end
+end
+
 end # module TestLQ

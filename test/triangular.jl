@@ -2,7 +2,6 @@
 
 module TestTriangular
 
-debug = false
 using Test, LinearAlgebra, Random
 using LinearAlgebra: BlasFloat, errorbounds, full!, transpose!,
     UnitUpperTriangular, UnitLowerTriangular,
@@ -16,14 +15,13 @@ using .Main.SizedArrays
 isdefined(Main, :FillArrays) || @eval Main include(joinpath($(BASE_TEST_PATH), "testhelpers", "FillArrays.jl"))
 using .Main.FillArrays
 
-debug && println("Triangular matrices")
-
 n = 9
 Random.seed!(123)
 
-debug && println("Test basic type functionality")
-@test_throws DimensionMismatch LowerTriangular(randn(5, 4))
-@test LowerTriangular(randn(3, 3)) |> t -> [size(t, i) for i = 1:3] == [size(Matrix(t), i) for i = 1:3]
+@testset "Test basic type functionality" begin
+    @test_throws DimensionMismatch LowerTriangular(randn(5, 4))
+    @test LowerTriangular(randn(3, 3)) |> t -> [size(t, i) for i = 1:3] == [size(Matrix(t), i) for i = 1:3]
+end
 
 struct MyTriangular{T, A<:LinearAlgebra.AbstractTriangular{T}} <: LinearAlgebra.AbstractTriangular{T}
     data :: A
@@ -50,8 +48,6 @@ Base.getindex(A::MyTriangular, i::Int, j::Int) = A.data[i,j]
         @test typeof(t1s) == t1{elty1, Symmetric{elty1, Matrix{elty1}}}
         t1t = t1{elty1}(t1(rand(Int8, n, n)))
         @test typeof(t1t) == t1{elty1, Matrix{elty1}}
-
-        debug && println("elty1: $elty1, A1: $t1")
 
         # Convert
         @test convert(AbstractMatrix{elty1}, A1) == A1
@@ -356,8 +352,6 @@ Base.getindex(A::MyTriangular, i::Int, j::Int) = A.data[i,j]
                                 (LowerTriangular, :L),
                                 (UnitLowerTriangular, :L))
 
-                debug && println("elty1: $elty1, A1: $t1, elty2: $elty2, A2: $t2")
-
                 A2 = t2(elty2 == Int ? rand(1:7, n, n) : convert(Matrix{elty2}, (elty2 <: Complex ? complex.(randn(n, n), randn(n, n)) : randn(n, n)) |> t -> cholesky(t't).U |> t -> uplo2 === :U ? t : copy(t')))
                 M2 = Matrix(A2)
                 # Convert
@@ -450,8 +444,6 @@ Base.getindex(A::MyTriangular, i::Int, j::Int) = A.data[i,j]
             end
 
             B = convert(Matrix{eltyB}, (elty1 <: Complex ? real(A1) : A1)*fill(1., n, n))
-
-            debug && println("elty1: $elty1, A1: $t1, B: $eltyB")
 
             Tri = Tridiagonal(rand(eltyB,n-1),rand(eltyB,n),rand(eltyB,n-1))
             C = Matrix{promote_type(elty1,eltyB)}(undef, n, n)
@@ -639,83 +631,80 @@ Aimg    = randn(n, n)/2
 A2real  = randn(n, n)/2
 A2img   = randn(n, n)/2
 
-for eltya in (Float32, Float64, ComplexF32, ComplexF64, BigFloat, Int)
+@testset for eltya in (Float32, Float64, ComplexF32, ComplexF64, BigFloat, Int)
     A = eltya == Int ? rand(1:7, n, n) : convert(Matrix{eltya}, eltya <: Complex ? complex.(Areal, Aimg) : Areal)
-    # a2 = eltya == Int ? rand(1:7, n, n) : convert(Matrix{eltya}, eltya <: Complex ? complex.(a2real, a2img) : a2real)
     εa = eps(abs(float(one(eltya))))
 
     for eltyb in (Float32, Float64, ComplexF32, ComplexF64)
         εb = eps(abs(float(one(eltyb))))
         ε = max(εa,εb)
 
-        debug && println("\ntype of A: ", eltya, " type of b: ", eltyb, "\n")
+        @testset "Solve upper triangular system" begin
+            Atri = UpperTriangular(lu(A).U) |> t -> eltya <: Complex && eltyb <: Real ? real(t) : t # Here the triangular matrix can't be too badly conditioned
+            b = convert(Matrix{eltyb}, Matrix(Atri)*fill(1., n, 2))
+            x = Atri \ b
 
-        debug && println("Solve upper triangular system")
-        Atri = UpperTriangular(lu(A).U) |> t -> eltya <: Complex && eltyb <: Real ? real(t) : t # Here the triangular matrix can't be too badly conditioned
-        b = convert(Matrix{eltyb}, Matrix(Atri)*fill(1., n, 2))
-        x = Matrix(Atri) \ b
-
-        debug && println("Test error estimates")
-        if eltya != BigFloat && eltyb != BigFloat
-            for i = 1:2
-                @test  norm(x[:,1] .- 1) <= errorbounds(UpperTriangular(A), x, b)[1][i]
+            # Test error estimates
+            if eltya != BigFloat && eltyb != BigFloat
+                for i = 1:2
+                    @test norm(x[:,1] .- 1) <= errorbounds(UpperTriangular(A), x, b)[1][i]
+                end
             end
-        end
-        debug && println("Test forward error [JIN 5705] if this is not a BigFloat")
 
-        x = Atri \ b
-        γ = n*ε/(1 - n*ε)
-        if eltya != BigFloat
-            bigA = big.(Atri)
-            x̂ = fill(1., n, 2)
+            # Test forward error [JIN 5705] if this is not a BigFloat
+            γ = n*ε/(1 - n*ε)
+            if eltya != BigFloat
+                bigA = big.(Atri)
+                x̂ = fill(1., n, 2)
+                for i = 1:size(b, 2)
+                    @test norm(x̂[:,i] - x[:,i], Inf)/norm(x̂[:,i], Inf) <= condskeel(bigA, x̂[:,i])*γ/(1 - condskeel(bigA)*γ)
+                end
+            end
+
+            # Test backward error [JIN 5705]
             for i = 1:size(b, 2)
-                @test norm(x̂[:,i] - x[:,i], Inf)/norm(x̂[:,i], Inf) <= condskeel(bigA, x̂[:,i])*γ/(1 - condskeel(bigA)*γ)
+                @test norm(abs.(b[:,i] - Atri*x[:,i]), Inf) <= γ * norm(Atri, Inf) * norm(x[:,i], Inf)
             end
         end
 
-        debug && println("Test backward error [JIN 5705]")
-        for i = 1:size(b, 2)
-            @test norm(abs.(b[:,i] - Atri*x[:,i]), Inf) <= γ * norm(Atri, Inf) * norm(x[:,i], Inf)
-        end
+        @testset "Solve lower triangular system" begin
+            Atri = LowerTriangular(lu(A).L) |> t -> eltya <: Complex && eltyb <: Real ? real(t) : t # Here the triangular matrix can't be too badly conditioned
+            b = convert(Matrix{eltyb}, Matrix(Atri)*fill(1., n, 2))
+            x = Atri \ b
 
-        debug && println("Solve lower triangular system")
-        Atri = UpperTriangular(lu(A).U) |> t -> eltya <: Complex && eltyb <: Real ? real(t) : t # Here the triangular matrix can't be too badly conditioned
-        b = convert(Matrix{eltyb}, Matrix(Atri)*fill(1., n, 2))
-        x = Matrix(Atri)\b
-
-        debug && println("Test error estimates")
-        if eltya != BigFloat && eltyb != BigFloat
-            for i = 1:2
-                @test  norm(x[:,1] .- 1) <= errorbounds(UpperTriangular(A), x, b)[1][i]
+            # Test error estimates
+            if eltya != BigFloat && eltyb != BigFloat
+                for i = 1:2
+                    @test norm(x[:,1] .- 1) <= errorbounds(LowerTriangular(A), x, b)[1][i]
+                end
             end
-        end
 
-        debug && println("Test forward error [JIN 5705] if this is not a BigFloat")
-        b = (b0 = Atri*fill(1, n, 2); convert(Matrix{eltyb}, eltyb == Int ? trunc.(b0) : b0))
-        x = Atri \ b
-        γ = n*ε/(1 - n*ε)
-        if eltya != BigFloat
-            bigA = big.(Atri)
-            x̂ = fill(1., n, 2)
+            # Test forward error [JIN 5705] if this is not a BigFloat
+            γ = n*ε/(1 - n*ε)
+            if eltya != BigFloat
+                bigA = big.(Atri)
+                x̂ = fill(1., n, 2)
+                for i = 1:size(b, 2)
+                    @test norm(x̂[:,i] - x[:,i], Inf)/norm(x̂[:,i], Inf) <= condskeel(bigA, x̂[:,i])*γ/(1 - condskeel(bigA)*γ)
+                end
+            end
+
+            # Test backward error [JIN 5705]
             for i = 1:size(b, 2)
-                @test norm(x̂[:,i] - x[:,i], Inf)/norm(x̂[:,i], Inf) <= condskeel(bigA, x̂[:,i])*γ/(1 - condskeel(bigA)*γ)
+                @test norm(abs.(b[:,i] - Atri*x[:,i]), Inf) <= γ * norm(Atri, Inf) * norm(x[:,i], Inf)
             end
-        end
-
-        debug && println("Test backward error [JIN 5705]")
-        for i = 1:size(b, 2)
-            @test norm(abs.(b[:,i] - Atri*x[:,i]), Inf) <= γ * norm(Atri, Inf) * norm(x[:,i], Inf)
         end
     end
 end
 
-# Issue 10742 and similar
-@test istril(UpperTriangular(diagm(0 => [1,2,3,4])))
-@test istriu(LowerTriangular(diagm(0 => [1,2,3,4])))
-@test isdiag(UpperTriangular(diagm(0 => [1,2,3,4])))
-@test isdiag(LowerTriangular(diagm(0 => [1,2,3,4])))
-@test !isdiag(UpperTriangular(rand(4, 4)))
-@test !isdiag(LowerTriangular(rand(4, 4)))
+@testset "triangularity/diagonality of triangular views (#10742)" begin
+    @test istril(UpperTriangular(diagm(0 => [1,2,3,4])))
+    @test istriu(LowerTriangular(diagm(0 => [1,2,3,4])))
+    @test isdiag(UpperTriangular(diagm(0 => [1,2,3,4])))
+    @test isdiag(LowerTriangular(diagm(0 => [1,2,3,4])))
+    @test !isdiag(UpperTriangular(rand(4, 4)))
+    @test !isdiag(LowerTriangular(rand(4, 4)))
+end
 
 # Test throwing in fallbacks for non BlasFloat/BlasComplex in A_rdiv_Bx!
 let n = 5
@@ -1438,6 +1427,20 @@ end
     @test ldiv!(U, B2v) ≈ ldiv!(U, B2vc)
     B2 = copy(B); B2v = view(B2, 1:2:9, 1:5); B2vc = copy(B2v)
     @test rdiv!(B2v, U) ≈ rdiv!(B2vc, U)
+end
+
+@testset "error messages in matmul with mismatched matrix sizes" begin
+    for T in (Int, Float64)
+        A = UpperTriangular(ones(T,2,2))
+        B = ones(T,3,3)
+        C = similar(B)
+        @test_throws "incompatible dimensions for matrix multiplication" mul!(C, A, B)
+        @test_throws "incompatible dimensions for matrix multiplication" mul!(C, B, A)
+        B = Array(A)
+        C = similar(B, (4,4))
+        @test_throws "incompatible destination size" mul!(C, A, B)
+        @test_throws "incompatible destination size" mul!(C, B, A)
+    end
 end
 
 end # module TestTriangular

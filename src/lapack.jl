@@ -2975,10 +2975,10 @@ for (orglq, orgqr, orgql, orgrq, ormlq, ormqr, ormql, ormrq, gemqrt, elty) in
             mA  = size(A, 1)
             k   = length(tau)
             if side == 'L' && m != mA
-                throw(DimensionMismatch(lazy"for a left-sided multiplication, the first dimension of C, $m, must equal the second dimension of A, $mA"))
+                throw(DimensionMismatch(lazy"for a left-sided multiplication, the first dimension of C, $m, must equal the first dimension of A, $mA"))
             end
             if side == 'R' && n != mA
-                throw(DimensionMismatch(lazy"for a right-sided multiplication, the second dimension of C, $m, must equal the second dimension of A, $mA"))
+                throw(DimensionMismatch(lazy"for a right-sided multiplication, the second dimension of C, $n, must equal the first dimension of A, $mA"))
             end
             if side == 'L' && k > m
                 throw(DimensionMismatch(lazy"invalid number of reflectors: k = $k should be <= m = $m"))
@@ -3025,10 +3025,10 @@ for (orglq, orgqr, orgql, orgrq, ormlq, ormqr, ormql, ormrq, gemqrt, elty) in
             mA  = size(A, 1)
             k   = length(tau)
             if side == 'L' && m != mA
-                throw(DimensionMismatch(lazy"for a left-sided multiplication, the first dimension of C, $m, must equal the second dimension of A, $mA"))
+                throw(DimensionMismatch(lazy"for a left-sided multiplication, the first dimension of C, $m, must equal the first dimension of A, $mA"))
             end
             if side == 'R' && n != mA
-                throw(DimensionMismatch(lazy"for a right-sided multiplication, the second dimension of C, $m, must equal the second dimension of A, $mA"))
+                throw(DimensionMismatch(lazy"for a right-sided multiplication, the second dimension of C, $n, must equal the first dimension of A, $mA"))
             end
             if side == 'L' && k > m
                 throw(DimensionMismatch(lazy"invalid number of reflectors: k = $k should be <= m = $m"))
@@ -3078,7 +3078,7 @@ for (orglq, orgqr, orgql, orgrq, ormlq, ormqr, ormql, ormrq, gemqrt, elty) in
                 throw(DimensionMismatch(lazy"for a left-sided multiplication, the first dimension of C, $m, must equal the second dimension of A, $nA"))
             end
             if side == 'R' && n != nA
-                throw(DimensionMismatch(lazy"for a right-sided multiplication, the second dimension of C, $m, must equal the second dimension of A, $nA"))
+                throw(DimensionMismatch(lazy"for a right-sided multiplication, the second dimension of C, $n, must equal the second dimension of A, $nA"))
             end
             if side == 'L' && k > m
                 throw(DimensionMismatch(lazy"invalid number of reflectors: k = $k should be <= m = $m"))

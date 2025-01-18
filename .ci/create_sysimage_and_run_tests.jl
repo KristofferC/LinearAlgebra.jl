@@ -13,7 +13,11 @@ withenv("JULIA_IMAGE_THREADS" => ncores) do
 end
 
 current_dir = @__DIR__
-cmd = """Base.runtests(["LinearAlgebra"]; propagate_project=true, ncores=$ncores)"""
+if VERSION >= v"1.12"
+    cmd = """Base.runtests(["LinearAlgebra"]; propagate_project=true, ncores=$ncores)"""
+else
+    cmd = """Base.runtests(["LinearAlgebra"]; ncores=$ncores)"""
+end
 withenv("JULIA_NUM_THREADS" => 1) do
     run(`$(Base.julia_cmd()) --sysimage=$sysimage --project=$current_dir -e $cmd`)
 end

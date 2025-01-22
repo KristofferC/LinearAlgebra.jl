@@ -5632,7 +5632,7 @@ for (syev, syevr, syevd, sygvd, elty, relty) in
                     resize!(iwork, liwork)
                 end
             end
-            W[1:m[]], Z[:,1:(jobz == 'V' ? m[] : 0)]
+            resize!(W, m[]), @view Z[:,1:(jobz == 'V' ? m[] : 0)]
         end
         syevr!(jobz::AbstractChar, A::AbstractMatrix{$elty}) =
             syevr!(jobz, 'A', 'U', A, 0.0, 0.0, 0, 0, -1.0)

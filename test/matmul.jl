@@ -1151,19 +1151,19 @@ end
 @testset "issue #1147: error messages in matmul" begin
     for T in (Int, Float64, ComplexF64)
         for f in (identity, Symmetric)
-            @test_throws "incompatible dimensions for matrix multiplication" f(zeros(T,0,0)) * zeros(T,1,5)
-            @test_throws "incompatible dimensions for matrix multiplication" f(zeros(T,0,0)) * zeros(T,1)
-            @test_throws "incompatible dimensions for matrix multiplication" zeros(T,0) * f(zeros(T,2,2))
-            @test_throws "incompatible dimensions for matrix multiplication" mul!(zeros(T,0,0), zeros(T,5), zeros(T,5))
-            @test_throws "incompatible dimensions for matrix multiplication" mul!(zeros(T,0,0), f(zeros(T,1,1)), zeros(T,0,0))
-            @test_throws "incompatible destination size" mul!(zeros(T,0,2), f(zeros(T,1,1)), zeros(T,1,2))
-            @test_throws "incompatible destination size" mul!(zeros(T,1,0), f(zeros(T,1,1)), zeros(T,1,2))
-            @test_throws "incompatible destination size" mul!(zeros(T,0,0), f(zeros(T,1,1)), zeros(T,1))
-            @test_throws "incompatible destination size" mul!(zeros(T,0), f(zeros(T,1,1)), zeros(T,1))
+            @test_throws DimensionMismatch f(zeros(T,0,0)) * zeros(T,1,5)
+            @test_throws DimensionMismatch f(zeros(T,0,0)) * zeros(T,1)
+            @test_throws DimensionMismatch zeros(T,0) * f(zeros(T,2,2))
+            @test_throws DimensionMismatch mul!(zeros(T,0,0), zeros(T,5), zeros(T,5))
+            @test_throws DimensionMismatch mul!(zeros(T,0,0), f(zeros(T,1,1)), zeros(T,0,0))
+            @test_throws DimensionMismatch mul!(zeros(T,0,2), f(zeros(T,1,1)), zeros(T,1,2))
+            @test_throws DimensionMismatch mul!(zeros(T,1,0), f(zeros(T,1,1)), zeros(T,1,2))
+            @test_throws DimensionMismatch mul!(zeros(T,0,0), f(zeros(T,1,1)), zeros(T,1))
+            @test_throws DimensionMismatch mul!(zeros(T,0), f(zeros(T,1,1)), zeros(T,1))
         end
 
-        @test_throws "expected size: (2, 2)" LinearAlgebra.matmul2x2!(zeros(T,2,2), 'N', 'N', zeros(T,2,3), zeros(T,3,2))
-        @test_throws "expected size: (2, 2)" LinearAlgebra.matmul2x2!(zeros(T,2,3), 'N', 'N', zeros(T,2,2), zeros(T,2,3))
+        @test_throws DimensionMismatch LinearAlgebra.matmul2x2!(zeros(T,2,2), 'N', 'N', zeros(T,2,3), zeros(T,3,2))
+        @test_throws DimensionMismatch LinearAlgebra.matmul2x2!(zeros(T,2,3), 'N', 'N', zeros(T,2,2), zeros(T,2,3))
     end
 end
 

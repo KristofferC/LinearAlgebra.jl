@@ -1314,7 +1314,7 @@ end
         A = Matrix{Float64}(undef, 0, 0)
         @test cbrt(A) == A
         A = Matrix{Int}(undef, 0, 0)
-        @test cbrt(A) isa Matrix{Float64}
+        @test cbrt(A) isa Matrix{Int}
     end
 end
 

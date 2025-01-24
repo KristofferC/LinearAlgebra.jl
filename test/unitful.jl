@@ -79,14 +79,14 @@ end
         U, s, V = F
         @test map(getval, Matrix(F)) ≈ map(getval, Du)
         @test svdvals(Du) == s
-        @test U isa AbstractMatrix{<:Furlong{0}}
-        @test V isa AbstractMatrix{<:Furlong{0}}
+        @test U isa AbstractMatrix{<:Union{Real,Complex}}
+        @test V isa AbstractMatrix{<:Union{Real,Complex}}
         @test s isa AbstractVector{<:Furlong{1}}
         E = eigen(Du)
         vals, vecs = E
         @test Matrix(E) == Du
         @test vals isa AbstractVector{<:Furlong{1}}
-        @test vecs isa AbstractMatrix{<:Furlong{0}}
+        @test vecs isa AbstractMatrix{<:Union{Real,Complex}}
     end
 end
 

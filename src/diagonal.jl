@@ -911,7 +911,7 @@ function pinv(D::Diagonal{T}, tol::Real) where T
 end
 
 _ortho_eltype(T) = Base.promote_op(/, T, T)
-_ortho_eltype(T::Type{<:Number}) = typeof(one(T))
+_ortho_eltype(T::Type{<:Number}) = typeof(one(T)/one(T))
 
 # TODO Docstrings for eigvals, eigvecs, eigen all mention permute, scale, sortby as keyword args
 # but not all of them below provide them. Do we need to fix that?

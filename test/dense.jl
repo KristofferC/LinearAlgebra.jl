@@ -57,23 +57,16 @@ Random.seed!(1234323)
         @test cond(Mars, Inf) ≈ 7.1
     end
     @testset "Empty matrices" begin
-        # zero for square (i.e. 0×0) matrices
-        @test cond(zeros(Int, 0, 0), 1) === 0.0
-        @test cond(zeros(Int, 0, 0), 2) === 0.0
-        @test cond(zeros(Int, 0, 0), Inf) === 0.0
-        @test cond(zeros(0, 0), 1) === 0.0
-        @test cond(zeros(0, 0), 2) === 0.0
-        @test cond(zeros(0, 0), Inf) === 0.0
-        @test cond(zeros(ComplexF64, 0, 0), 1) === 0.0
-        @test cond(zeros(ComplexF64, 0, 0), 2) === 0.0
-        @test cond(zeros(ComplexF64, 0, 0), Inf) === 0.0
-        # error for non-square matrices
-        @test_throws DimensionMismatch cond(zeros(10, 0), 1)
-        @test_throws DimensionMismatch cond(zeros(0, 10), 1)
-        @test_throws DimensionMismatch cond(zeros(10, 0), 2)
-        @test_throws DimensionMismatch cond(zeros(0, 10), 2)
-        @test_throws DimensionMismatch cond(zeros(10, 0), Inf)
-        @test_throws DimensionMismatch cond(zeros(0, 10), Inf)
+        for norm in (1,2,Inf)
+            # zero for square (i.e. 0×0) matrices
+            @test cond(zeros(Int, 0, 0), norm) === 0.0
+            @test cond(zeros(0, 0), norm) === 0.0
+            @test cond(zeros(ComplexF64, 0, 0), norm) === 0.0
+            # error for non-square matrices
+            for size in ((10,0), (0,10))
+                @test_throws DimensionMismatch cond(zeros(size...), norm)
+            end
+        end
     end
 end
 

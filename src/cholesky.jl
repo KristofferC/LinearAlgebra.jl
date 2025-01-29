@@ -65,7 +65,7 @@ julia> C.U
   ⋅    ⋅    3.0
 
 julia> C.L
-3×3 LowerTriangular{Float64, Matrix{Float64}}:
+3×3 LowerTriangular{Float64, Adjoint{Matrix{Float64}}}:
   2.0   ⋅    ⋅
   6.0  1.0   ⋅
  -8.0  5.0  3.0
@@ -530,7 +530,7 @@ julia> C.U
   ⋅    ⋅    3.0
 
 julia> C.L
-3×3 LowerTriangular{Float64, Matrix{Float64}}:
+3×3 LowerTriangular{Float64, Adjoint{Matrix{Float64}}}:
   2.0   ⋅    ⋅
   6.0  1.0   ⋅
  -8.0  5.0  3.0
@@ -668,14 +668,14 @@ function _choleskyUfactor(Cfactors, Cuplo)
     if Cuplo === 'U'
         return UpperTriangular(Cfactors)
     else
-        return copy(LowerTriangular(Cfactors)')
+        return LowerTriangular(Cfactors)'
     end
 end
 function _choleskyLfactor(Cfactors, Cuplo)
     if Cuplo === 'L'
         return LowerTriangular(Cfactors)
     else
-        return copy(UpperTriangular(Cfactors)')
+        return UpperTriangular(Cfactors)'
     end
 end
 

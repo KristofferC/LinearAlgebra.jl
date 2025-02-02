@@ -4090,7 +4090,7 @@ for (stev, stebz, stegr, stein, elty) in
                     resize!(iwork, liwork)
                 end
             end
-            m[] == length(w) ? w : resize!(w, m[]), m[] == size(Z, 2) ? Z : reshape(resize!(Z, ldz * m[]), ldz, m[])
+            resize!(w, m[]), reshape(resize!(Z, ldz * m[]), ldz, m[])
         end
 
         function stein!(dv::AbstractVector{$elty}, ev_in::AbstractVector{$elty}, w_in::AbstractVector{$elty}, iblock_in::AbstractVector{BlasInt}, isplit_in::AbstractVector{BlasInt})

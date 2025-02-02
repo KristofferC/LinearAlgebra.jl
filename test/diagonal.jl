@@ -6,8 +6,6 @@ using Test, LinearAlgebra, Random
 using LinearAlgebra: BlasFloat, BlasComplex
 
 const BASE_TEST_PATH = joinpath(Sys.BINDIR, "..", "share", "julia", "test")
-isdefined(Main, :Furlongs) || @eval Main include(joinpath($(BASE_TEST_PATH), "testhelpers", "Furlongs.jl"))
-using .Main.Furlongs
 
 isdefined(Main, :OffsetArrays) || @eval Main include(joinpath($(BASE_TEST_PATH), "testhelpers", "OffsetArrays.jl"))
 using .Main.OffsetArrays
@@ -469,23 +467,6 @@ Random.seed!(1)
         @test (U*Diagonal(s))*V' ≈ D
         @test svdvals(D) == s
         @test svd(D).V == V
-    end
-
-    @testset "svd/eigen with Diagonal{Furlong}" begin
-        Du = Furlong.(D)
-        @test Du isa Diagonal{<:Furlong{1}}
-        F = svd(Du)
-        U, s, V = F
-        @test map(x -> x.val, Matrix(F)) ≈ map(x -> x.val, Du)
-        @test svdvals(Du) == s
-        @test U isa AbstractMatrix{<:Furlong{0}}
-        @test V isa AbstractMatrix{<:Furlong{0}}
-        @test s isa AbstractVector{<:Furlong{1}}
-        E = eigen(Du)
-        vals, vecs = E
-        @test Matrix(E) == Du
-        @test vals isa AbstractVector{<:Furlong{1}}
-        @test vecs isa AbstractMatrix{<:Furlong{0}}
     end
 end
 

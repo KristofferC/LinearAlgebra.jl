@@ -2975,10 +2975,10 @@ for (orglq, orgqr, orgql, orgrq, ormlq, ormqr, ormql, ormrq, gemqrt, elty) in
             mA  = size(A, 1)
             k   = length(tau)
             if side == 'L' && m != mA
-                throw(DimensionMismatch(lazy"for a left-sided multiplication, the first dimension of C, $m, must equal the second dimension of A, $mA"))
+                throw(DimensionMismatch(lazy"for a left-sided multiplication, the first dimension of C, $m, must equal the first dimension of A, $mA"))
             end
             if side == 'R' && n != mA
-                throw(DimensionMismatch(lazy"for a right-sided multiplication, the second dimension of C, $m, must equal the second dimension of A, $mA"))
+                throw(DimensionMismatch(lazy"for a right-sided multiplication, the second dimension of C, $n, must equal the first dimension of A, $mA"))
             end
             if side == 'L' && k > m
                 throw(DimensionMismatch(lazy"invalid number of reflectors: k = $k should be <= m = $m"))
@@ -3025,10 +3025,10 @@ for (orglq, orgqr, orgql, orgrq, ormlq, ormqr, ormql, ormrq, gemqrt, elty) in
             mA  = size(A, 1)
             k   = length(tau)
             if side == 'L' && m != mA
-                throw(DimensionMismatch(lazy"for a left-sided multiplication, the first dimension of C, $m, must equal the second dimension of A, $mA"))
+                throw(DimensionMismatch(lazy"for a left-sided multiplication, the first dimension of C, $m, must equal the first dimension of A, $mA"))
             end
             if side == 'R' && n != mA
-                throw(DimensionMismatch(lazy"for a right-sided multiplication, the second dimension of C, $m, must equal the second dimension of A, $mA"))
+                throw(DimensionMismatch(lazy"for a right-sided multiplication, the second dimension of C, $n, must equal the first dimension of A, $mA"))
             end
             if side == 'L' && k > m
                 throw(DimensionMismatch(lazy"invalid number of reflectors: k = $k should be <= m = $m"))
@@ -3078,7 +3078,7 @@ for (orglq, orgqr, orgql, orgrq, ormlq, ormqr, ormql, ormrq, gemqrt, elty) in
                 throw(DimensionMismatch(lazy"for a left-sided multiplication, the first dimension of C, $m, must equal the second dimension of A, $nA"))
             end
             if side == 'R' && n != nA
-                throw(DimensionMismatch(lazy"for a right-sided multiplication, the second dimension of C, $m, must equal the second dimension of A, $nA"))
+                throw(DimensionMismatch(lazy"for a right-sided multiplication, the second dimension of C, $n, must equal the second dimension of A, $nA"))
             end
             if side == 'L' && k > m
                 throw(DimensionMismatch(lazy"invalid number of reflectors: k = $k should be <= m = $m"))
@@ -5391,9 +5391,9 @@ for (syev, syevr, syevd, sygvd, elty) in
             W = similar(A, $elty, n)
             ldz = n
             if jobz == 'N'
-                Z = similar(A, $elty, ldz, 0)
+                Z = similar(A, $elty, 0)
             elseif jobz == 'V'
-                Z = similar(A, $elty, ldz, n)
+                Z = similar(A, $elty, ldz * n)
             end
             isuppz = similar(A, BlasInt, 2*n)
             work   = Vector{$elty}(undef, 1)
@@ -5423,7 +5423,8 @@ for (syev, syevr, syevd, sygvd, elty) in
                     resize!(iwork, liwork)
                 end
             end
-            W[1:m[]], Z[:,1:(jobz == 'V' ? m[] : 0)]
+            zm = jobz == 'V' ? m[] : 0
+            resize!(W, m[]), reshape(resize!(Z, ldz * zm), ldz, zm)
         end
         syevr!(jobz::AbstractChar, A::AbstractMatrix{$elty}) =
             syevr!(jobz, 'A', 'U', A, 0.0, 0.0, 0, 0, -1.0)
@@ -5593,10 +5594,10 @@ for (syev, syevr, syevd, sygvd, elty, relty) in
             W = similar(A, $relty, n)
             if jobz == 'N'
                 ldz = 1
-                Z = similar(A, $elty, ldz, 0)
+                Z = similar(A, $elty, 0)
             elseif jobz == 'V'
                 ldz = n
-                Z = similar(A, $elty, ldz, n)
+                Z = similar(A, $elty, ldz * n)
             end
             isuppz = similar(A, BlasInt, 2*n)
             work   = Vector{$elty}(undef, 1)
@@ -5632,7 +5633,8 @@ for (syev, syevr, syevd, sygvd, elty, relty) in
                     resize!(iwork, liwork)
                 end
             end
-            W[1:m[]], Z[:,1:(jobz == 'V' ? m[] : 0)]
+            zm = jobz == 'V' ? m[] : 0
+            resize!(W, m[]), reshape(resize!(Z, ldz * zm), ldz, zm)
         end
         syevr!(jobz::AbstractChar, A::AbstractMatrix{$elty}) =
             syevr!(jobz, 'A', 'U', A, 0.0, 0.0, 0, 0, -1.0)

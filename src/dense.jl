@@ -1587,24 +1587,25 @@ factorize(A::Transpose) = transpose(factorize(parent(A)))
 factorize(a::Number)    = a # same as how factorize behaves on Diagonal types
 
 function getstructure(A::StridedMatrix)
+    require_one_based_indexing(A)
     m, n = size(A)
     if m == 1 return A[1] end
     utri    = true
     utri1   = true
     herm    = true
     sym     = true
-    for j = 1:n-1, i = j+1:m
-        if utri1
+    for j = 1:n, i = j:m
+        if (j < n) && (i > j) && utri1 # indices are off-diagonal
             if A[i,j] != 0
                 utri1 = i == j + 1
                 utri = false
             end
         end
         if sym
-            sym &= A[i,j] == A[j,i]
+            sym &= A[i,j] == transpose(A[j,i])
         end
         if herm
-            herm &= A[i,j] == conj(A[j,i])
+            herm &= A[i,j] == adjoint(A[j,i])
         end
         if !(utri1|herm|sym) break end
     end
@@ -1617,10 +1618,12 @@ function getstructure(A::StridedMatrix)
     if ltri1
         for i = 1:n-1
             if A[i,i+1] != 0
-                ltri &= false
+                ltri = false
                 break
             end
         end
+    else
+        ltri = false
     end
     return (utri, utri1, ltri, ltri1, sym, herm)
 end
@@ -1779,6 +1782,10 @@ Condition number of the matrix `M`, computed using the operator `p`-norm. Valid 
 """
 function cond(A::AbstractMatrix, p::Real=2)
     if p == 2
+        if isempty(A)
+            checksquare(A)
+            return zero(real(eigtype(eltype(A))))
+        end
         v = svdvals(A)
         maxv = maximum(v)
         return iszero(maxv) ? oftype(real(maxv), Inf) : maxv / minimum(v)

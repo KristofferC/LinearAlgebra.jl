@@ -3875,6 +3875,9 @@ for (trcon, trevc, trrfs, elty, relty) in
                 work, rwork, info, 1, 1)
             chklapackerror(info[])
 
+            VLn = size(VL, 1)
+            VRn = size(VR, 1)
+            #Decide what exactly to return
             if howmny == 'S' #compute selected eigenvectors
                 if side == 'L' #left eigenvectors only
                     return select, reshape(resize!(vec(VL), VLn * m[]), VLn, m[])

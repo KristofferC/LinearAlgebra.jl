@@ -604,9 +604,9 @@ end
     @test Matrix(B) ≈ A
     B = cholesky(A, RowMaximum())
     B32 = cholesky(Float32.(A), RowMaximum())
-    @test B isa CholeskyPivoted{Float16,Matrix{Float16}}
-    @test B.U isa UpperTriangular{Float16, Matrix{Float16}}
-    @test B.L isa LowerTriangular{Float16, Matrix{Float16}}
+    @test B isa CholeskyPivoted{Float16, <:AbstractMatrix{Float16}}
+    @test B.U isa UpperTriangular{Float16, <:AbstractMatrix{Float16}}
+    @test B.L isa LowerTriangular{Float16, <:AbstractMatrix{Float16}}
     @test B.U ≈ B32.U
     @test B.L ≈ B32.L
     @test Matrix(B) ≈ A
@@ -667,7 +667,7 @@ end
 
     for uplo in (:L, :U)
         C = Symmetric(Apd, uplo)
-        for val in (Val(true), Val(false))
+        for val in (NoPivot(), RowMaximum())
             B = cholesky(C, val)
             B.L, B.U  # access once to ensure the accessor is compiled already
             @test (@allocated B.L) <= allowed_cost_of_overhead

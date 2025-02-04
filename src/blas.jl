@@ -2223,9 +2223,8 @@ for (mmname, smname, elty) in
             chkstride1(A)
             chkstride1(B)
             if diag == 'N'
-                M = side == 'L' ? A : B
-                for i in 1:n
-                    iszero(M[i,i]) && throw(SingularException(i))
+                for i in 1:k
+                    iszero(A[i,i]) && throw(SingularException(i))
                 end
             end
             ccall((@blasfunc($smname), libblastrampoline), Cvoid,

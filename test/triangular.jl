@@ -886,8 +886,13 @@ end
     end
 end
 
-@testset "(l/r)mul! and (l/r)div! for non-contiguous matrices" begin
+@testset "(l/r)mul! and (l/r)div! for non-contiguous arrays" begin
     U = UpperTriangular(reshape(collect(3:27.0),5,5))
+    b = float.(1:10)
+    b2 = copy(b); b2v = view(b2, 1:2:9); b2vc = copy(b2v)
+    @test lmul!(U, b2v) == lmul!(U, b2vc)
+    b2 = copy(b); b2v = view(b2, 1:2:9); b2vc = copy(b2v)
+    @test ldiv!(U, b2v) ≈ ldiv!(U, b2vc)
     B = float.(collect(reshape(1:100, 10,10)))
     B2 = copy(B); B2v = view(B2, 1:2:9, 1:5); B2vc = copy(B2v)
     @test lmul!(U, B2v) == lmul!(U, B2vc)

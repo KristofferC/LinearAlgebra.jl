@@ -1369,6 +1369,11 @@ for (fname, elty) in ((:dtrsv_,:Float64),
                 throw(DimensionMismatch(lazy"size of A is $n != length(x) = $(length(x))"))
             end
             chkstride1(A)
+            if diag == 'N'
+                for i in 1:n
+                    iszero(A[i,i]) && throw(SingularException(i))
+                end
+            end
             px, stx = vec_pointer_stride(x, ArgumentError("input vector with 0 stride is not allowed"))
             GC.@preserve x ccall((@blasfunc($fname), libblastrampoline), Cvoid,
                 (Ref{UInt8}, Ref{UInt8}, Ref{UInt8}, Ref{BlasInt},
@@ -2217,6 +2222,12 @@ for (mmname, smname, elty) in
             end
             chkstride1(A)
             chkstride1(B)
+            if diag == 'N'
+                M = side == 'L' ? A : B
+                for i in 1:n
+                    iszero(M[i,i]) && throw(SingularException(i))
+                end
+            end
             ccall((@blasfunc($smname), libblastrampoline), Cvoid,
                    (Ref{UInt8}, Ref{UInt8}, Ref{UInt8}, Ref{UInt8},
                     Ref{BlasInt}, Ref{BlasInt}, Ref{$elty}, Ptr{$elty},

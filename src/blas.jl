@@ -128,6 +128,10 @@ Set the number of threads the BLAS library should use equal to `n::Integer`.
 
 Also accepts `nothing`, in which case julia tries to guess the default number of threads.
 Passing `nothing` is discouraged and mainly exists for historical reasons.
+
+!!! note
+    Some BLAS libraries, such as Apple Accelerate, cannot be configured to use a fixed number of threads.
+    For these backends, `set_num_threads()` is a no-op. See also [`get_num_threads`](@ref).
 """
 set_num_threads(nt::Integer)::Nothing = lbt_set_num_threads(Int32(nt))
 function set_num_threads(::Nothing)
@@ -147,6 +151,10 @@ Get the number of threads the BLAS library is using.
 
 !!! compat "Julia 1.6"
     `get_num_threads` requires at least Julia 1.6.
+
+!!! note
+    Some BLAS libraries, such as Apple Accelerate, cannot be configured to use a fixed number of threads.
+    For these backends, `get_num_threads()` always returns `1`. See also [`set_num_threads`](@ref).
 """
 get_num_threads()::Int = lbt_get_num_threads()
 

@@ -664,30 +664,15 @@ copy(C::CholeskyPivoted) = CholeskyPivoted(copy(C.factors), C.uplo, C.piv, C.ran
 size(C::Union{Cholesky, CholeskyPivoted}) = size(C.factors)
 size(C::Union{Cholesky, CholeskyPivoted}, d::Integer) = size(C.factors, d)
 
-function _choleskyUfactor(Cfactors, Cuplo)
-    if Cuplo === 'U'
-        return UpperTriangular(Cfactors)
-    else
-        return LowerTriangular(Cfactors)'
-    end
-end
-function _choleskyLfactor(Cfactors, Cuplo)
-    if Cuplo === 'L'
-        return LowerTriangular(Cfactors)
-    else
-        return UpperTriangular(Cfactors)'
-    end
-end
-
 function getproperty(C::Cholesky, d::Symbol)
     Cfactors = getfield(C, :factors)
     Cuplo    = getfield(C, :uplo)
     if d === :U
-        _choleskyUfactor(Cfactors, Cuplo)
+        UpperTriangular(Cuplo == 'U' ? Cfactors : Cfactors')
     elseif d === :L
-        _choleskyLfactor(Cfactors, Cuplo)
+        LowerTriangular(Cuplo == 'L' ? Cfactors : Cfactors')
     elseif d === :UL
-        return (Cuplo === 'U' ? UpperTriangular(Cfactors) : LowerTriangular(Cfactors))
+        return (Cuplo == 'U' ? UpperTriangular(Cfactors) : LowerTriangular(Cfactors))
     else
         return getfield(C, d)
     end
@@ -704,9 +689,9 @@ function getproperty(C::CholeskyPivoted{T}, d::Symbol) where {T}
     Cfactors = getfield(C, :factors)
     Cuplo    = getfield(C, :uplo)
     if d === :U
-        _choleskyUfactor(Cfactors, Cuplo)
+        UpperTriangular(Cuplo == 'U' ? Cfactors : Cfactors')
     elseif d === :L
-        _choleskyLfactor(Cfactors, Cuplo)
+        LowerTriangular(Cuplo == 'L' ? Cfactors : Cfactors')
     elseif d === :p
         return getfield(C, :piv)
     elseif d === :P

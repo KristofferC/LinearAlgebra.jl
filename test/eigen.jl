@@ -16,6 +16,7 @@ Random.seed!(12343219)
 areal = randn(n,n)/2
 aimg  = randn(n,n)/2
 
+# DEBUGGING INFO
 @testset for eltya in (Float32, Float64, ComplexF32, ComplexF64, Int)
     aa = eltya == Int ? rand(1:7, n, n) : convert(Matrix{eltya}, eltya <: Complex ? complex.(areal, aimg) : areal)
     asym = aa' + aa                  # symmetric indefinite
@@ -24,6 +25,46 @@ aimg  = randn(n,n)/2
                            (view(aa, 1:n, 1:n),
                             view(asym, 1:n, 1:n),
                             view(apd, 1:n, 1:n)))
+        @testset "non-symmetric eigen decomposition" begin
+            for T in (Hermitian(Tridiagonal(a), :U), Hermitian(Tridiagonal(a), :L))
+                @info typeof(T)
+                f = eigen(T)
+            end
+        end
+        @testset "symmetric generalized eigenproblem" begin
+            if isa(a, Array)
+                asym_sg = asym[1:n1, 1:n1]
+                a_sg = a[:,n1+1:n2]
+            else
+                asym_sg = view(asym, 1:n1, 1:n1)
+                a_sg = view(a, 1:n, n1+1:n2)
+            end
+            ASG2 = a_sg'a_sg
+
+            # matrices of different types (#14896)
+            D = Diagonal(ASG2)
+            for uplo in (:L, :U)
+                gd = eigen(Hermitian(Tridiagonal(ASG2), uplo), D)
+                @test Hermitian(Tridiagonal(ASG2), uplo) * gd.vectors ≈ D * gd.vectors * Diagonal(gd.values)
+            end
+        end
+    end
+end
+
+
+
+@testset for eltya in (Float32, Float64, ComplexF32, ComplexF64, Int)
+    @info "eigen.jl"
+    @info eltya
+    aa = eltya == Int ? rand(1:7, n, n) : convert(Matrix{eltya}, eltya <: Complex ? complex.(areal, aimg) : areal)
+    @info repr(aa)
+    asym = aa' + aa                  # symmetric indefinite
+    apd  = aa' * aa                 # symmetric positive-definite
+    for (a, asym, apd) in ((aa, asym, apd),
+                           (view(aa, 1:n, 1:n),
+                            view(asym, 1:n, 1:n),
+                            view(apd, 1:n, 1:n)))
+        @info typeof(a)
         ε = εa = eps(abs(float(one(eltya))))
 
         α = rand(eltya)
@@ -33,6 +74,7 @@ aimg  = randn(n,n)/2
         @test eab.vectors == eigvecs(fill(α,1,1),fill(β,1,1))
 
         @testset "non-symmetric eigen decomposition" begin
+            @info "non-symmetric eigen decomposition"
             d, v = eigen(a)
             for i in 1:size(a,2)
                 @test a*v[:,i] ≈ d[i]*v[:,i]
@@ -46,6 +88,7 @@ aimg  = randn(n,n)/2
             @test Array(f) ≈ a
 
             for T in (Tridiagonal(a), Hermitian(Tridiagonal(a), :U), Hermitian(Tridiagonal(a), :L))
+                @info T
                 f = eigen(T)
                 d, v = f
                 for i in 1:size(a,2)
@@ -65,6 +108,7 @@ aimg  = randn(n,n)/2
             @test_throws DomainError eigmax(a - a')
         end
         @testset "symmetric generalized eigenproblem" begin
+            @info "symmetric generalized eigenproblem"
             if isa(a, Array)
                 asym_sg = asym[1:n1, 1:n1]
                 a_sg = a[:,n1+1:n2]
@@ -100,6 +144,7 @@ aimg  = randn(n,n)/2
             # matrices of different types (#14896)
             D = Diagonal(ASG2)
             for uplo in (:L, :U)
+                @info uplo
                 if eltya <: Real
                     fs = eigen(Symmetric(asym_sg, uplo), ASG2)
                     @test fs.values ≈ f.values

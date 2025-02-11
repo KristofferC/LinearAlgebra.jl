@@ -4090,7 +4090,7 @@ for (stev, stebz, stegr, stein, elty) in
                     resize!(iwork, liwork)
                 end
             end
-            Zm = min(size(Z, 2), m[])
+            Zm = min(Zn, m[])
             resize!(w, m[]), reshape(resize!(Z, ldz * Zm), ldz, Zm)
         end
 

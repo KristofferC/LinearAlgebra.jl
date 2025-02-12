@@ -354,6 +354,10 @@ end
         @test_throws DimensionMismatch LAPACK.ormqr!('L','N',A,temp,B)
         @test_throws ArgumentError LAPACK.ormqr!('X','N',A,temp,B)
         @test_throws ArgumentError LAPACK.ormqr!('L','X',A,temp,B)
+        A = rand(elty,10,11)
+        A,tau = LAPACK.geqrf!(A)
+        B = copy(A)
+        @test LAPACK.orgqr!(B,tau) ≈ LAPACK.ormqr!('R','N',A,tau,Matrix{elty}(I, 10, 10))
 
         A = rand(elty,10,10)
         A,tau = LAPACK.geqlf!(A)
@@ -371,6 +375,11 @@ end
         @test_throws DimensionMismatch LAPACK.ormql!('L','N',A,temp,B)
         @test_throws ArgumentError LAPACK.ormql!('X','N',A,temp,B)
         @test_throws ArgumentError LAPACK.ormql!('L','X',A,temp,B)
+
+        A = rand(elty,10,11)
+        A,tau = LAPACK.geqlf!(A)
+        B = copy(A)
+        @test LAPACK.orgql!(B,tau) ≈ LAPACK.ormql!('R','N',A,tau,Matrix{elty}(I, 10, 10))
 
         A = rand(elty,10,10)
         A,tau = LAPACK.gerqf!(A)

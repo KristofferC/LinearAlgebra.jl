@@ -354,6 +354,7 @@ end
         @test_throws DimensionMismatch LAPACK.ormqr!('L','N',A,temp,B)
         @test_throws ArgumentError LAPACK.ormqr!('X','N',A,temp,B)
         @test_throws ArgumentError LAPACK.ormqr!('L','X',A,temp,B)
+        
         A = rand(elty,10,11)
         A,tau = LAPACK.geqrf!(A)
         B = copy(A)

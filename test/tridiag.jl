@@ -383,7 +383,15 @@ end
                         w, iblock, isplit = LAPACK.stebz!('V', 'B', -infinity, infinity, 0, 0, zero, b, a)
                         evecs = LAPACK.stein!(b, a, w)
 
-                        (e, v) = eigen(SymTridiagonal(b, a))
+                        try
+                            (e, v) = eigen(SymTridiagonal(b, a))
+                        catch ex
+                            if isa(ex, ReadOnlyMemoryError)
+                                @info "rom error" evecs b a w
+                            else
+                                rethrow(ex)
+                            end
+                        end
                         @test e ≈ w
                         test_approx_eq_vecs(v, evecs)
                     end

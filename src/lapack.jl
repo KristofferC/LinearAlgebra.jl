@@ -4092,16 +4092,7 @@ for (stev, stebz, stegr, stein, elty) in
             end
             wm = min(n, m[])
             Zm = min(Zn, m[])
-            try
-                return resize!(w, wm), reshape(resize!(Z, ldz * Zm), ldz, Zm)
-            catch ex
-                if isa(ex, ReadOnlyMemoryError)
-                    @info "ReadOnlyMemoryError!" n Zn wm Zm m[] jobz range dv ev vl vu il iu
-                    @info w
-                    @info Z
-                end
-                rethrow()
-            end
+            return resize!(w, wm), reshape(resize!(Z, ldz * Zm), ldz, Zm)
         end
 
         function stein!(dv::AbstractVector{$elty}, ev_in::AbstractVector{$elty}, w_in::AbstractVector{$elty}, iblock_in::AbstractVector{BlasInt}, isplit_in::AbstractVector{BlasInt})

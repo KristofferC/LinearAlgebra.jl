@@ -984,6 +984,12 @@ end
 @testset "sqrt for diagonal" begin
     A = diagm(0 => [1, 2, 3])
     @test sqrt(A)^2 ≈ A
+
+    A = diagm(0 => [1.0, -1.0])
+    @test sqrt(A) == diagm(0 => [1.0, 1.0im])
+    @test sqrt(A)^2 ≈ A
+    B = im*A
+    @test sqrt(B)^2 ≈ B
 end
 
 @testset "issue #40141" begin

@@ -333,10 +333,12 @@ function (*)(D::Diagonal, V::AbstractVector)
 end
 
 function (*)(A::AdjOrTransAbsMat, D::Diagonal)
-    copy((D' * A')')
+    adj = wrapperop(A)
+    copy(adj(adj(D) * adj(A)))
 end
 function (*)(D::Diagonal, A::AdjOrTransAbsMat)
-    copy((A' * D')')
+    adj = wrapperop(A)
+    copy(adj(adj(A) * adj(D)))
 end
 
 function rmul!(A::AbstractMatrix, D::Diagonal)

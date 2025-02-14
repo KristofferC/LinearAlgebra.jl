@@ -332,6 +332,13 @@ function (*)(D::Diagonal, V::AbstractVector)
     return D.diag .* V
 end
 
+function (*)(A::AdjOrTransAbsMat, D::Diagonal)
+    copy((D' * A')')
+end
+function (*)(D::Diagonal, A::AdjOrTransAbsMat)
+    copy((A' * D')')
+end
+
 function rmul!(A::AbstractMatrix, D::Diagonal)
     matmul_size_check(size(A), size(D))
     for I in CartesianIndices(A)

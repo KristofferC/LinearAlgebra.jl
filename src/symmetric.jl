@@ -887,9 +887,6 @@ for func in (:exp, :cos, :sin, :tan, :cosh, :sinh, :tanh, :atan, :asinh, :atanh,
         function ($func)(A::Hermitian{<:Complex})
             F = eigen(A)
             retmat = (F.vectors * Diagonal(($func).(F.values))) * F.vectors'
-            for i in diagind(retmat, IndexStyle(retmat))
-                retmat[i] = real(retmat[i])
-            end
             return Hermitian(retmat)
         end
     end
@@ -919,9 +916,6 @@ for func in (:acos, :asin)
             F = eigen(A)
             if all(λ -> -1 ≤ λ ≤ 1, F.values)
                 retmat = (F.vectors * Diagonal(($func).(F.values))) * F.vectors'
-                for i in diagind(retmat, IndexStyle(retmat))
-                    retmat[i] = real(retmat[i])
-                end
                 return Hermitian(retmat)
             else
                 return (F.vectors * Diagonal(($func).(complex.(F.values)))) * F.vectors'
@@ -942,9 +936,6 @@ function acosh(A::Hermitian{<:Complex})
     F = eigen(A)
     if all(λ -> λ ≥ 1, F.values)
         retmat = (F.vectors * Diagonal(acosh.(F.values))) * F.vectors'
-        for i in diagind(retmat, IndexStyle(retmat))
-            retmat[i] = real(retmat[i])
-        end
         return Hermitian(retmat)
     else
         return (F.vectors * Diagonal(acosh.(complex.(F.values)))) * F.vectors'
@@ -998,9 +989,6 @@ for func in (:log, :sqrt)
             λ₀ = $rtolval # treat λ ≥ λ₀ as "zero" eigenvalues up to roundoff
             if all(λ -> λ ≥ λ₀, F.values)
                 retmat = (F.vectors * Diagonal(($func).(max.(0, F.values)))) * F.vectors'
-                for i in diagind(retmat, IndexStyle(retmat))
-                    retmat[i] = real(retmat[i])
-                end
                 return Hermitian(retmat)
             else
                 retmat = (F.vectors * Diagonal(($func).(complex.(F.values)))) * F.vectors'

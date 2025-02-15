@@ -191,7 +191,8 @@ _eviter_transposed(M::SymTridiagonal) = (transpose(x) for x in _evview(M))
 function diag(M::SymTridiagonal, n::Integer=0)
     # every branch call similar(..., ::Int) to make sure the
     # same vector type is returned independent of n
-    v = similar(M.dv, max(0, length(M.dv)-abs(n)))
+    dinds = diagind(M, n, IndexStyle(M))
+    v = similar(M.dv, length(dinds))
     if n == 0
         return copyto!(v, _diagiter(M))
     elseif n == 1
@@ -199,7 +200,7 @@ function diag(M::SymTridiagonal, n::Integer=0)
     elseif n == -1
         return copyto!(v, _eviter_transposed(M))
     else
-        for i in eachindex(v)
+        for i in eachindex(v, dinds)
             v[i] = M[BandIndex(n,i)]
         end
     end
@@ -662,7 +663,8 @@ issymmetric(S::Tridiagonal) = all(issymmetric, S.d) && all(Iterators.map((x, y) 
 function diag(M::Tridiagonal, n::Integer=0)
     # every branch call similar(..., ::Int) to make sure the
     # same vector type is returned independent of n
-    v = similar(M.d, max(0, length(M.d)-abs(n)))
+    dinds = diagind(M, n, IndexStyle(M))
+    v = similar(M.d, length(dinds))
     if n == 0
         copyto!(v, M.d)
     elseif n == -1
@@ -670,7 +672,7 @@ function diag(M::Tridiagonal, n::Integer=0)
     elseif n == 1
         copyto!(v, M.du)
     elseif abs(n) <= size(M,1)
-        for i in eachindex(v)
+        for i in eachindex(v, dinds)
             v[i] = M[BandIndex(n,i)]
         end
     end

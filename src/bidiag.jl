@@ -405,14 +405,15 @@ end
 function diag(M::Bidiagonal, n::Integer=0)
     # every branch call similar(..., ::Int) to make sure the
     # same vector type is returned independent of n
-    v = similar(M.dv, max(0, length(M.dv)-abs(n)))
+    dinds = diagind(M, n, IndexStyle(M))
+    v = similar(M.dv, length(dinds))
     if n == 0
         copyto!(v, M.dv)
     elseif (n == 1 && M.uplo == 'U') ||  (n == -1 && M.uplo == 'L')
         copyto!(v, M.ev)
     elseif -size(M,1) <= n <= size(M,1)
-        for i in eachindex(v)
-            v[i] = M[BandIndex(n,i)]
+        for i in eachindex(v, dinds)
+            @inbounds v[i] = M[BandIndex(n,i)]
         end
     end
     return v

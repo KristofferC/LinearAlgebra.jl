@@ -836,12 +836,13 @@ permutedims(D::Diagonal, perm) = (Base.checkdims_perm(axes(D), axes(D), perm); D
 function diag(D::Diagonal, k::Integer=0)
     # every branch call similar(..., ::Int) to make sure the
     # same vector type is returned independent of k
-    v = similar(D.diag, max(0, length(D.diag)-abs(k)))
+    dinds = diagind(D, k, IndexStyle(D))
+    v = similar(D.diag, length(dinds))
     if k == 0
         copyto!(v, D.diag)
     else
-        for i in eachindex(v)
-            v[i] = D[BandIndex(k, i)]
+        for i in eachindex(v, dinds)
+            @inbounds v[i] = D[dinds[i]]
         end
     end
     return v

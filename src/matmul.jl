@@ -1021,6 +1021,7 @@ function _generic_matmatmul_nonadjtrans!(C, A, B, alpha, beta)
     @inbounds for n in axes(B, 2), k in axes(B, 1)
         # Balpha = B[k,n] * alpha, but we skip the multiplication in case isone(alpha)
         Balpha = @stable_muladdmul MulAddMul(alpha, false)(B[k,n])
+        !ismissing(Balpha) && iszero(Balpha) && continue
         @simd for m in axes(A, 1)
             C[m,n] = muladd(A[m,k], Balpha, C[m,n])
         end

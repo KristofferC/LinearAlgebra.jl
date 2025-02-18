@@ -4062,7 +4062,7 @@ for (stev, stebz, stegr, stein, elty) in
             ldz = jobz == 'N' ? 1 : n
             Zn = range == 'I' ? iu-il+1 : n
             Z = similar(dv, $elty, ldz * Zn)
-            isuppz = similar(dv, BlasInt, 2*size(Z, 2))
+            isuppz = similar(dv, BlasInt, 2 * Zn)
             work = Vector{$elty}(undef, 1)
             lwork = BlasInt(-1)
             iwork = Vector{BlasInt}(undef, 1)
@@ -4090,9 +4090,7 @@ for (stev, stebz, stegr, stein, elty) in
                     resize!(iwork, liwork)
                 end
             end
-            wm = min(n, m[])
-            Zm = min(Zn, m[])
-            return resize!(w, wm), reshape(resize!(Z, ldz * Zm), ldz, Zm)
+            return resize!(w, m[]), reshape(resize!(Z, ldz * m[]), ldz, m[])
         end
 
         function stein!(dv::AbstractVector{$elty}, ev_in::AbstractVector{$elty}, w_in::AbstractVector{$elty}, iblock_in::AbstractVector{BlasInt}, isplit_in::AbstractVector{BlasInt})

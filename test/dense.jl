@@ -56,6 +56,18 @@ Random.seed!(1234323)
         @test cond(Mars, 2)   ≈ 6.181867355918493
         @test cond(Mars, Inf) ≈ 7.1
     end
+    @testset "Empty matrices" begin
+        for p in (1,2,Inf)
+            # zero for square (i.e. 0×0) matrices
+            @test cond(zeros(Int, 0, 0), p) === 0.0
+            @test cond(zeros(0, 0), p) === 0.0
+            @test cond(zeros(ComplexF64, 0, 0), p) === 0.0
+            # error for non-square matrices
+            for size in ((10,0), (0,10))
+                @test_throws DimensionMismatch cond(zeros(size...), p)
+            end
+        end
+    end
 end
 
 areal = randn(n,n)/2
@@ -972,6 +984,12 @@ end
 @testset "sqrt for diagonal" begin
     A = diagm(0 => [1, 2, 3])
     @test sqrt(A)^2 ≈ A
+
+    A = diagm(0 => [1.0, -1.0])
+    @test sqrt(A) == diagm(0 => [1.0, 1.0im])
+    @test sqrt(A)^2 ≈ A
+    B = im*A
+    @test sqrt(B)^2 ≈ B
 end
 
 @testset "issue #40141" begin
@@ -1345,6 +1363,18 @@ end
             @test f(A) == f(M)
         end
     end
+end
+
+@testset "structure of dense matrices" begin
+    # A is neither triangular nor symmetric/Hermitian
+    A = [1 im 2; -im 0  3; 2 3 im]
+    @test factorize(A) isa LU{ComplexF64, Matrix{ComplexF64}, Vector{Int}}
+    @test !any(LinearAlgebra.getstructure(A))
+end
+
+@testset "SingularException show" begin
+    A = diagm(0=> [1, 0])
+    @test_throws "matrix is singular; factorization failed" inv(A)
 end
 
 end # module TestDense

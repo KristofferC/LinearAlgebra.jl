@@ -595,18 +595,18 @@ end
     B = cholesky(A)
     B32 = cholesky(Float32.(A))
     @test B isa Cholesky{Float16, Matrix{Float16}}
-    @test B.U isa UpperTriangular{Float16, Matrix{Float16}}
-    @test B.L isa LowerTriangular{Float16, Matrix{Float16}}
-    @test B.UL isa UpperTriangular{Float16, Matrix{Float16}}
+    @test B.U isa UpperTriangular{Float16, <:AbstractMatrix{Float16}}
+    @test B.L isa LowerTriangular{Float16, <:AbstractMatrix{Float16}}
+    @test B.UL isa UpperTriangular{Float16, <:AbstractMatrix{Float16}}
     @test B.U ≈ B32.U
     @test B.L ≈ B32.L
     @test B.UL ≈ B32.UL
     @test Matrix(B) ≈ A
     B = cholesky(A, RowMaximum())
     B32 = cholesky(Float32.(A), RowMaximum())
-    @test B isa CholeskyPivoted{Float16,Matrix{Float16}}
-    @test B.U isa UpperTriangular{Float16, Matrix{Float16}}
-    @test B.L isa LowerTriangular{Float16, Matrix{Float16}}
+    @test B isa CholeskyPivoted{Float16, <:AbstractMatrix{Float16}}
+    @test B.U isa UpperTriangular{Float16, <:AbstractMatrix{Float16}}
+    @test B.L isa LowerTriangular{Float16, <:AbstractMatrix{Float16}}
     @test B.U ≈ B32.U
     @test B.L ≈ B32.L
     @test Matrix(B) ≈ A
@@ -655,6 +655,24 @@ end
         C = cholesky(P)
         CC = cholesky(C)
         @test C == CC
+    end
+end
+
+@testset "accessing both L and U factors should avoid allocations" begin
+    n = 30
+    A = rand(n, n)
+    Apd = A'A
+    allowed_cost_of_overhead = 32
+    @assert sizeof(Apd) > 4allowed_cost_of_overhead  # ensure that we could positively identify extra copies
+
+    for uplo in (:L, :U)
+        C = Symmetric(Apd, uplo)
+        for val in (NoPivot(), RowMaximum())
+            B = cholesky(C, val)
+            B.L, B.U  # access once to ensure the accessor is compiled already
+            @test (@allocated B.L) <= allowed_cost_of_overhead
+            @test (@allocated B.U) <= allowed_cost_of_overhead
+        end
     end
 end
 

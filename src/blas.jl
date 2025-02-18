@@ -84,7 +84,8 @@ export
     trsm!,
     trsm
 
-using ..LinearAlgebra: libblastrampoline, BlasReal, BlasComplex, BlasFloat, BlasInt, DimensionMismatch, checksquare, chkstride1
+using ..LinearAlgebra: libblastrampoline, BlasReal, BlasComplex, BlasFloat, BlasInt,
+    DimensionMismatch, checksquare, chkstride1, SingularException
 
 include("lbt.jl")
 
@@ -128,6 +129,10 @@ Set the number of threads the BLAS library should use equal to `n::Integer`.
 
 Also accepts `nothing`, in which case julia tries to guess the default number of threads.
 Passing `nothing` is discouraged and mainly exists for historical reasons.
+
+!!! note
+    Some BLAS libraries, such as Apple Accelerate, cannot be configured to use a fixed number of threads.
+    For these backends, `set_num_threads()` is a no-op. See also [`get_num_threads`](@ref).
 """
 set_num_threads(nt::Integer)::Nothing = lbt_set_num_threads(Int32(nt))
 function set_num_threads(::Nothing)
@@ -147,6 +152,10 @@ Get the number of threads the BLAS library is using.
 
 !!! compat "Julia 1.6"
     `get_num_threads` requires at least Julia 1.6.
+
+!!! note
+    Some BLAS libraries, such as Apple Accelerate, cannot be configured to use a fixed number of threads.
+    For these backends, `get_num_threads()` always returns `1`. See also [`set_num_threads`](@ref).
 """
 get_num_threads()::Int = lbt_get_num_threads()
 
@@ -1369,6 +1378,11 @@ for (fname, elty) in ((:dtrsv_,:Float64),
                 throw(DimensionMismatch(lazy"size of A is $n != length(x) = $(length(x))"))
             end
             chkstride1(A)
+            if diag == 'N'
+                for i in 1:n
+                    iszero(A[i,i]) && throw(SingularException(i))
+                end
+            end
             px, stx = vec_pointer_stride(x, ArgumentError("input vector with 0 stride is not allowed"))
             GC.@preserve x ccall((@blasfunc($fname), libblastrampoline), Cvoid,
                 (Ref{UInt8}, Ref{UInt8}, Ref{UInt8}, Ref{BlasInt},
@@ -2217,6 +2231,11 @@ for (mmname, smname, elty) in
             end
             chkstride1(A)
             chkstride1(B)
+            if diag == 'N'
+                for i in 1:k
+                    iszero(A[i,i]) && throw(SingularException(i))
+                end
+            end
             ccall((@blasfunc($smname), libblastrampoline), Cvoid,
                    (Ref{UInt8}, Ref{UInt8}, Ref{UInt8}, Ref{UInt8},
                     Ref{BlasInt}, Ref{BlasInt}, Ref{$elty}, Ptr{$elty},

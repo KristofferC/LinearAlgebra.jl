@@ -748,6 +748,11 @@ end
         select,Vln,Vrn = LAPACK.trevc!('B','S',select,copy(T))
         @test Vrn ≈ v
         @test Vln ≈ Vl
+        Vl = LAPACK.trevc!('L','A',select,copy(T))
+        Vr = LAPACK.trevc!('R','A',select,copy(T))
+        Vla, Vra = LAPACK.trevc!('B','A',select,copy(T))
+        @test Vr ≈ Vra
+        @test Vl ≈ Vla
         @test_throws ArgumentError LAPACK.trevc!('V','S',select,T)
         @test_throws ArgumentError LAPACK.trevc!('R','X',select,T)
         temp1010 = rand(elty,10,10)

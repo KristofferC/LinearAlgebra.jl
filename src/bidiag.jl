@@ -118,13 +118,6 @@ Bidiagonal(A::Bidiagonal) = A
 Bidiagonal{T}(A::Bidiagonal{T}) where {T} = A
 Bidiagonal{T}(A::Bidiagonal) where {T} = Bidiagonal{T}(A.dv, A.ev, A.uplo)
 
-function convert(::Type{T}, A::AbstractMatrix) where T<:Bidiagonal
-    checksquare(A)
-    isbanded(A, -1, 1) || throw(InexactError(:convert, T, A))
-    iszero(diagview(A, 1)) ? T(A, :L) :
-        iszero(diagview(A, -1)) ? T(A, :U) : throw(InexactError(:convert, T, A))
-end
-
 _offdiagind(uplo) = uplo == 'U' ? 1 : -1
 
 @inline function Base.isassigned(A::Bidiagonal, i::Int, j::Int)
@@ -227,7 +220,12 @@ promote_rule(::Type{<:Tridiagonal}, ::Type{<:Bidiagonal}) = Tridiagonal
 AbstractMatrix{T}(A::Bidiagonal) where {T} = Bidiagonal{T}(A)
 AbstractMatrix{T}(A::Bidiagonal{T}) where {T} = copy(A)
 
-convert(::Type{T}, m::AbstractMatrix) where {T<:Bidiagonal} = m isa T ? m : T(m)::T
+function convert(::Type{T}, A::AbstractMatrix) where T<:Bidiagonal
+    checksquare(A)
+    isbanded(A, -1, 1) || throw(InexactError(:convert, T, A))
+    iszero(diagview(A, 1)) ? T(A, :L) :
+        iszero(diagview(A, -1)) ? T(A, :U) : throw(InexactError(:convert, T, A))
+end
 
 similar(B::Bidiagonal, ::Type{T}) where {T} = Bidiagonal(similar(B.dv, T), similar(B.ev, T), B.uplo)
 similar(B::Bidiagonal, ::Type{T}, dims::Union{Dims{1},Dims{2}}) where {T} = similar(B.dv, T, dims)

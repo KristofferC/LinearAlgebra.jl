@@ -1106,6 +1106,12 @@ end
                 diagm(-1 => [1,2], 1=>[4,5])]
             B = convert(Tridiagonal, M)
             @test B == Tridiagonal(M)
+            B = convert(Tridiagonal{Int8}, M)
+            @test B == M
+            @test B isa Tridiagonal{Int8}
+            B = convert(Tridiagonal{Int8, OffsetVector{Int8, Vector{Int8}}}, M)
+            @test B == M
+            @test B isa Tridiagonal{Int8, OffsetVector{Int8, Vector{Int8}}}
         end
         @test_throws InexactError convert(Tridiagonal, fill(5, 4, 4))
     end

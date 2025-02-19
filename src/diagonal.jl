@@ -99,9 +99,7 @@ julia> Diagonal(A)
  ⋅  5
 ```
 """
-Diagonal(A::AbstractMatrix) = Diagonal(diag(A))
-Diagonal{T}(A::AbstractMatrix) where T = Diagonal{T}(diag(A))
-Diagonal{T,V}(A::AbstractMatrix) where {T,V<:AbstractVector{T}} = Diagonal{T,V}(diag(A))
+(::Type{D})(A::AbstractMatrix) where {D<:Diagonal} = D(diag(A))
 function convert(::Type{T}, A::AbstractMatrix) where T<:Diagonal
     checksquare(A)
     isdiag(A) ? T(A) : throw(InexactError(:convert, T, A))

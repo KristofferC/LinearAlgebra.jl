@@ -1165,6 +1165,12 @@ end
     M = diagm(0 => [1,2,3], -1=>[4,5])
     B = convert(Bidiagonal, M)
     @test B == Bidiagonal(M, :L)
+    B = convert(Bidiagonal{Int8}, M)
+    @test B == M
+    @test B isa Bidiagonal{Int8, Vector{Int8}}
+    B = convert(Bidiagonal{Int8, OffsetVector{Int8, Vector{Int8}}}, M)
+    @test B == M
+    @test B isa Bidiagonal{Int8, OffsetVector{Int8, Vector{Int8}}}
     M = diagm(-1 => [1,2], 1=>[4,5])
     @test_throws InexactError convert(Bidiagonal, M)
 end

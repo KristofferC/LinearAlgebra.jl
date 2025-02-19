@@ -109,8 +109,8 @@ julia> Bidiagonal(A, :L) # contains the main diagonal and first subdiagonal of A
  ⋅  ⋅  4  4
 ```
 """
-function Bidiagonal(A::AbstractMatrix, uplo::Symbol)
-    Bidiagonal(diag(A, 0), diag(A, uplo === :U ? 1 : -1), uplo)
+function (::Type{Bi})(A::AbstractMatrix, uplo::Symbol) where {Bi<:Bidiagonal}
+    Bi(diag(A, 0), diag(A, uplo === :U ? 1 : -1), uplo)
 end
 
 

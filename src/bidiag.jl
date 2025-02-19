@@ -118,6 +118,13 @@ Bidiagonal(A::Bidiagonal) = A
 Bidiagonal{T}(A::Bidiagonal{T}) where {T} = A
 Bidiagonal{T}(A::Bidiagonal) where {T} = Bidiagonal{T}(A.dv, A.ev, A.uplo)
 
+function convert(::Type{T}, A::AbstractMatrix) where T<:Bidiagonal
+    checksquare(A)
+    isbanded(A, -1, 1) || throw(InexactError(:convert, T, A))
+    iszero(diagview(A, 1)) ? T(A, :L) :
+        iszero(diagview(A, -1)) ? T(A, :U) : throw(InexactError(:convert, T, A))
+end
+
 _offdiagind(uplo) = uplo == 'U' ? 1 : -1
 
 @inline function Base.isassigned(A::Bidiagonal, i::Int, j::Int)

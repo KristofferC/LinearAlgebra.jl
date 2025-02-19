@@ -109,15 +109,17 @@ julia> SymTridiagonal(B)
 """
 function SymTridiagonal(A::AbstractMatrix)
     checksquare(A)
-    du = diag(A, 1)
-    d  = diag(A)
-    dl = diag(A, -1)
-    if all(((x, y),) -> x == transpose(y), zip(du, dl)) && all(issymmetric, d)
+    if _checksymmetric(A)
+        du = diag(A, 1)
+        d  = diag(A)
         SymTridiagonal(d, du)
     else
         throw(ArgumentError("matrix is not symmetric; cannot convert to SymTridiagonal"))
     end
 end
+
+_checksymmetric(d, du, dl) = all(((x, y),) -> x == transpose(y), zip(du, dl)) && all(issymmetric, d)
+_checksymmetric(A::AbstractMatrix) = _checksymmetric(diagview(A), diagview(A, 1), diagview(A, -1))
 
 SymTridiagonal{T,V}(S::SymTridiagonal{T,V}) where {T,V<:AbstractVector{T}} = S
 SymTridiagonal{T,V}(S::SymTridiagonal) where {T,V<:AbstractVector{T}} =
@@ -127,6 +129,11 @@ SymTridiagonal{T}(S::SymTridiagonal) where {T} =
     SymTridiagonal(convert(AbstractVector{T}, S.dv)::AbstractVector{T},
                     convert(AbstractVector{T}, S.ev)::AbstractVector{T})
 SymTridiagonal(S::SymTridiagonal) = S
+
+function convert(::Type{T}, A::AbstractMatrix) where T<:SymTridiagonal
+    checksquare(A)
+    _checksymmetric(A) && isbanded(A, -1, 1) ? T(A) : throw(InexactError(:convert, T, A))
+end
 
 AbstractMatrix{T}(S::SymTridiagonal) where {T} = SymTridiagonal{T}(S)
 AbstractMatrix{T}(S::SymTridiagonal{T}) where {T} = copy(S)
@@ -603,6 +610,11 @@ function Tridiagonal{T,V}(A::Tridiagonal) where {T,V<:AbstractVector{T}}
     else
         Tridiagonal{T,V}(dl, d, du)
     end
+end
+
+function convert(::Type{T}, A::AbstractMatrix) where T<:Tridiagonal
+    checksquare(A)
+    isbanded(A, -1, 1) ? T(A) : throw(InexactError(:convert, T, A))
 end
 
 size(M::Tridiagonal) = (n = length(M.d); (n, n))

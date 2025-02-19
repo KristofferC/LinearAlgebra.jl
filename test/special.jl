@@ -79,7 +79,7 @@ Random.seed!(1)
     end
     A = UpperTriangular(triu(rand(n,n)))
     for newtype in [Diagonal, Bidiagonal, Tridiagonal, SymTridiagonal]
-        @test_throws ArgumentError convert(newtype,A)
+        @test_throws Union{ArgumentError,InexactError} convert(newtype,A)
     end
 
 

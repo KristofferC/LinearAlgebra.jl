@@ -1158,4 +1158,15 @@ end
     @test opnorm(B, Inf) == opnorm(Matrix(B), Inf)
 end
 
+@testset "convert to Bidiagonal" begin
+    M = diagm(0 => [1,2,3], 1=>[4,5])
+    B = convert(Bidiagonal, M)
+    @test B == Bidiagonal(M, :U)
+    M = diagm(0 => [1,2,3], -1=>[4,5])
+    B = convert(Bidiagonal, M)
+    @test B == Bidiagonal(M, :L)
+    M = diagm(-1 => [1,2], 1=>[4,5])
+    @test_throws InexactError convert(Bidiagonal, M)
+end
+
 end # module TestBidiagonal

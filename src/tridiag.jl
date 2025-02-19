@@ -111,7 +111,7 @@ function SymTridiagonal(A::AbstractMatrix)
     checksquare(A)
     du = diag(A, 1)
     d  = diag(A)
-    dl = diag(A,-1)
+    dl = diag(A, -1)
     if _checksymmetric(d, du, dl)
         SymTridiagonal(d, du)
     else

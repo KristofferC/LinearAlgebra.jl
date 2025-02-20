@@ -338,8 +338,8 @@ function _diag_adj_mul(A::AdjOrTransAbsMat, D::Diagonal)
 end
 function _diag_adj_mul(A::AdjOrTransAbsMat{<:Number, <:StridedMatrix}, D::Diagonal{<:Number})
     TS = promote_op(matprod, eltype(A), eltype(D))
-    Ac = copyto!(matprod_dest(A, D, TS), A)
-    rmul!(Ac, D)
+    C = matprod_dest(A, D, TS)
+    mul!(C, A, D)
 end
 function _diag_adj_mul(D::Diagonal, A::AdjOrTransAbsMat)
     adj = wrapperop(A)
@@ -347,8 +347,8 @@ function _diag_adj_mul(D::Diagonal, A::AdjOrTransAbsMat)
 end
 function _diag_adj_mul(D::Diagonal{<:Number}, A::AdjOrTransAbsMat{<:Number, <:StridedMatrix})
     T = promote_op(matprod, eltype(A), eltype(D))
-    Ac = copyto!(matprod_dest(D, A, TS), A)
-    lmul!(D, Ac)
+    C = matprod_dest(A, D, TS)
+    mul!(C, D, A)
 end
 
 function (*)(A::AdjOrTransAbsMat, D::Diagonal)

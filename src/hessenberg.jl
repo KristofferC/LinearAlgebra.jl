@@ -157,10 +157,12 @@ function mul(U::UpperOrUnitUpperTriangular, H::UpperHessenberg)
     UpperHessenberg(HH)
 end
 
+/(H::UpperHessenberg, D::Diagonal) = UpperHessenberg(H.data / D)
 function /(H::UpperHessenberg, U::UpperTriangular)
     HH = _rdiv!(matprod_dest(H, U, promote_op(/, eltype(H), eltype(U))), H, U)
     UpperHessenberg(HH)
 end
+\(D::Diagonal, H::UpperHessenberg) = UpperHessenberg(D \ H.data)
 function /(H::UpperHessenberg, U::UnitUpperTriangular)
     HH = _rdiv!(matprod_dest(H, U, promote_op(/, eltype(H), eltype(U))), H, U)
     UpperHessenberg(HH)

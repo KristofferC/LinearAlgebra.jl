@@ -330,26 +330,19 @@ function (*)(D::Diagonal, V::AbstractVector)
     return D.diag .* V
 end
 
-function _diag_adj_mul(A::AdjOrTransAbsMat, D::Diagonal)
+function mul(A::AdjOrTransAbsMat, D::Diagonal)
     adj = wrapperop(A)
     copy(adj(adj(D) * adj(A)))
 end
-function _diag_adj_mul(A::AdjOrTransAbsMat{<:Number, <:StridedMatrix}, D::Diagonal{<:Number})
-    @invoke *(A::AbstractMatrix, D::AbstractMatrix)
+function mul(A::AdjOrTransAbsMat{<:Number, <:StridedMatrix}, D::Diagonal{<:Number})
+    @invoke mul(A::AbstractMatrix, D::AbstractMatrix)
 end
-function _diag_adj_mul(D::Diagonal, A::AdjOrTransAbsMat)
+function mul(D::Diagonal, A::AdjOrTransAbsMat)
     adj = wrapperop(A)
     copy(adj(adj(A) * adj(D)))
 end
-function _diag_adj_mul(D::Diagonal{<:Number}, A::AdjOrTransAbsMat{<:Number, <:StridedMatrix})
-    @invoke *(D::AbstractMatrix, A::AbstractMatrix)
-end
-
-function (*)(A::AdjOrTransAbsMat, D::Diagonal)
-    _diag_adj_mul(A, D)
-end
-function (*)(D::Diagonal, A::AdjOrTransAbsMat)
-    _diag_adj_mul(D, A)
+function mul(D::Diagonal{<:Number}, A::AdjOrTransAbsMat{<:Number, <:StridedMatrix})
+    @invoke mul(D::AbstractMatrix, A::AbstractMatrix)
 end
 
 function rmul!(A::AbstractMatrix, D::Diagonal)

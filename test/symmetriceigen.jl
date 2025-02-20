@@ -174,7 +174,7 @@ end
     @test D.vectors ≈ D32.vectors
 
     # ensure that different algorithms dispatch correctly
-    λ, V = eigen(C, LinearAlgebra.QRIteration())
+    λ, V = eigen(C; alg=LinearAlgebra.QRIteration())
     @test λ isa Vector{Float16}
     @test C * V ≈ V * Diagonal(λ)
 end

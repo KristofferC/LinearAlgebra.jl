@@ -443,19 +443,10 @@ function __muldiag_nonzeroalpha!(out, D::Diagonal, B::UpperOrLowerTriangular, al
 end
 
 @inline function __muldiag_nonzeroalpha_right!(out, A, D::Diagonal, alpha::Number, beta::Number)
-    if iszero(beta)
-        @inbounds for j in axes(A, 2)
-            dja = D.diag[j] * alpha
-            @simd for i in axes(A, 1)
-                out[i,j] = A[i,j] * dja
-            end
-        end
-    else
-        @inbounds for j in axes(A, 2)
-            dja = D.diag[j] * alpha
-            @simd for i in axes(A, 1)
-                out[i,j] = A[i,j] * dja + out[i,j] * beta
-            end
+    @inbounds for j in axes(A, 2)
+        dja = @stable_muladdmul MulAddMul(alpha,false)(D.diag[j])
+        @simd for i in axes(A, 1)
+            @stable_muladdmul _modify!(MulAddMul(true,beta), A[i,j] * dja, out, (i,j))
         end
     end
     return out

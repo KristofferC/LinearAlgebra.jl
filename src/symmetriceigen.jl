@@ -6,10 +6,16 @@ eigencopy_oftype(A::Hermitian, S) = Hermitian(copytrito!(similar(parent(A), S, s
 eigencopy_oftype(A::Symmetric, S) = Symmetric(copytrito!(similar(parent(A), S, size(A)), A.data, A.uplo), sym_uplo(A.uplo))
 eigencopy_oftype(A::Symmetric{<:Complex}, S) = copyto!(similar(parent(A), S), A)
 
-default_eigen_alg(A) = DivideAndConquer()
+"""
+    default_eigen_alg(A)
+
+Return the default algorithm used to solve the eigensystem `A v = λ v` for a symmetric matrix `A`.
+Defaults to `LinearAlegbra.DivideAndConquer()`, which corresponds to the LAPACK function `LAPACK.syevd!`.
+"""
+default_eigen_alg(@nospecialize(A)) = DivideAndConquer()
 
 # Eigensolvers for symmetric and Hermitian matrices
-function eigen!(A::RealHermSymComplexHerm{<:BlasReal,<:StridedMatrix}, alg::Algorithm = default_eigen_alg(A); sortby::Union{Function,Nothing}=nothing)
+function eigen!(A::RealHermSymComplexHerm{<:BlasReal,<:StridedMatrix}; alg::Algorithm = default_eigen_alg(A), sortby::Union{Function,Nothing}=nothing)
     if alg === DivideAndConquer()
         Eigen(sorteig!(LAPACK.syevd!('V', A.uplo, A.data)..., sortby)...)
     elseif alg === QRIteration()
@@ -22,7 +28,7 @@ function eigen!(A::RealHermSymComplexHerm{<:BlasReal,<:StridedMatrix}, alg::Algo
 end
 
 """
-    eigen(A::Union{Hermitian, Symmetric}, alg::Algorithm = default_eigen_alg(A)) -> Eigen
+    eigen(A::Union{Hermitian, Symmetric}; alg::LinearAlgebra.Algorithm = LinearAlgebra.default_eigen_alg(A)) -> Eigen
 
 Compute the eigenvalue decomposition of `A`, returning an [`Eigen`](@ref) factorization object `F`
 which contains the eigenvalues in `F.values` and the eigenvectors in the columns of the
@@ -45,19 +51,19 @@ The default `alg` used may change in the future.
 
 The following functions are available for `Eigen` objects: [`inv`](@ref), [`det`](@ref), and [`isposdef`](@ref).
 """
-function eigen(A::RealHermSymComplexHerm, alg::Algorithm = default_eigen_alg(A); sortby::Union{Function,Nothing}=nothing)
-    _eigen(A, alg; sortby)
+function eigen(A::RealHermSymComplexHerm; alg::Algorithm = default_eigen_alg(A), sortby::Union{Function,Nothing}=nothing)
+    _eigen(A; alg, sortby)
 end
 
 # we dispatch on the eltype in an internal method to avoid ambiguities
-function _eigen(A::RealHermSymComplexHerm, alg::Algorithm; sortby)
+function _eigen(A::RealHermSymComplexHerm; alg::Algorithm, sortby)
     S = eigtype(eltype(A))
-    eigen!(eigencopy_oftype(A, S), alg; sortby)
+    eigen!(eigencopy_oftype(A, S); alg, sortby)
 end
 
-function _eigen(A::RealHermSymComplexHerm{Float16}, alg::Algorithm; sortby::Union{Function,Nothing}=nothing)
+function _eigen(A::RealHermSymComplexHerm{Float16}; alg::Algorithm, sortby::Union{Function,Nothing}=nothing)
     S = eigtype(eltype(A))
-    E = eigen!(eigencopy_oftype(A, S), alg, sortby=sortby)
+    E = eigen!(eigencopy_oftype(A, S); alg, sortby)
     values = convert(AbstractVector{Float16}, E.values)
     vectors = convert(AbstractMatrix{isreal(E.vectors) ? Float16 : Complex{Float16}}, E.vectors)
     return Eigen(values, vectors)
@@ -114,7 +120,7 @@ function eigen(A::RealHermSymComplexHerm, vl::Real, vh::Real)
 end
 
 
-function eigvals!(A::RealHermSymComplexHerm{<:BlasReal,<:StridedMatrix}, alg::Algorithm = default_eigen_alg(A); sortby::Union{Function,Nothing}=nothing)
+function eigvals!(A::RealHermSymComplexHerm{<:BlasReal,<:StridedMatrix}; alg::Algorithm = default_eigen_alg(A), sortby::Union{Function,Nothing}=nothing)
     vals::Vector{real(eltype(A))} = if alg === DivideAndConquer()
         LAPACK.syevd!('N', A.uplo, A.data)
     elseif alg === QRIteration()
@@ -129,7 +135,7 @@ function eigvals!(A::RealHermSymComplexHerm{<:BlasReal,<:StridedMatrix}, alg::Al
 end
 
 """
-    eigvals(A::Union{Hermitian, Symmetric}, alg::Algorithm = default_eigen_alg(A))) -> values
+    eigvals(A::Union{Hermitian, Symmetric}; alg::Algorithm = default_eigen_alg(A))) -> values
 
 Return the eigenvalues of `A`.
 
@@ -143,9 +149,9 @@ a comparison of the accuracy and performance of different methods.
 
 The default `alg` used may change in the future.
 """
-function eigvals(A::RealHermSymComplexHerm, alg::Algorithm = default_eigen_alg(A); sortby::Union{Function,Nothing}=nothing)
+function eigvals(A::RealHermSymComplexHerm; alg::Algorithm = default_eigen_alg(A), sortby::Union{Function,Nothing}=nothing)
     S = eigtype(eltype(A))
-    eigvals!(eigencopy_oftype(A, S), alg; sortby)
+    eigvals!(eigencopy_oftype(A, S); alg, sortby)
 end
 
 

@@ -247,9 +247,7 @@ Base._reverse(A::Diagonal, dims) = reverse!(Matrix(A); dims)
 Base._reverse(A::Diagonal, ::Colon) = Diagonal(reverse(A.diag))
 Base._reverse!(A::Diagonal, ::Colon) = (reverse!(A.diag); A)
 
-ishermitian(D::Diagonal{<:Number}) = isreal(D.diag)
 ishermitian(D::Diagonal) = all(ishermitian, D.diag)
-issymmetric(D::Diagonal{<:Number}) = true
 issymmetric(D::Diagonal) = all(issymmetric, D.diag)
 isposdef(D::Diagonal) = all(isposdef, D.diag)
 
@@ -702,22 +700,24 @@ end
 for Tri in (:UpperTriangular, :LowerTriangular)
     UTri = Symbol(:Unit, Tri)
     # 2 args
-    for (fun, f) in zip((:*, :rmul!, :rdiv!, :/), (:identity, :identity, :inv, :inv))
-        @eval $fun(A::$Tri, D::Diagonal) = $Tri($fun(A.data, D))
-        @eval $fun(A::$UTri, D::Diagonal) = $Tri(_setdiag!($fun(A.data, D), $f, D.diag))
+    for (fun, f) in zip((:mul, :rmul!, :rdiv!, :/), (:identity, :identity, :inv, :inv))
+        g = fun == :mul ? :* : fun
+        @eval $fun(A::$Tri, D::Diagonal) = $Tri($g(A.data, D))
+        @eval $fun(A::$UTri, D::Diagonal) = $Tri(_setdiag!($g(A.data, D), $f, D.diag))
     end
-    @eval *(A::$Tri{<:Any, <:StridedMaybeAdjOrTransMat}, D::Diagonal) =
-            @invoke *(A::AbstractMatrix, D::Diagonal)
-    @eval *(A::$UTri{<:Any, <:StridedMaybeAdjOrTransMat}, D::Diagonal) =
-            @invoke *(A::AbstractMatrix, D::Diagonal)
-    for (fun, f) in zip((:*, :lmul!, :ldiv!, :\), (:identity, :identity, :inv, :inv))
-        @eval $fun(D::Diagonal, A::$Tri) = $Tri($fun(D, A.data))
-        @eval $fun(D::Diagonal, A::$UTri) = $Tri(_setdiag!($fun(D, A.data), $f, D.diag))
+    @eval mul(A::$Tri{<:Any, <:StridedMaybeAdjOrTransMat}, D::Diagonal) =
+            @invoke mul(A::AbstractMatrix, D::Diagonal)
+    @eval mul(A::$UTri{<:Any, <:StridedMaybeAdjOrTransMat}, D::Diagonal) =
+            @invoke mul(A::AbstractMatrix, D::Diagonal)
+    for (fun, f) in zip((:mul, :lmul!, :ldiv!, :\), (:identity, :identity, :inv, :inv))
+        g = fun == :mul ? :* : fun
+        @eval $fun(D::Diagonal, A::$Tri) = $Tri($g(D, A.data))
+        @eval $fun(D::Diagonal, A::$UTri) = $Tri(_setdiag!($g(D, A.data), $f, D.diag))
     end
-    @eval *(D::Diagonal, A::$Tri{<:Any, <:StridedMaybeAdjOrTransMat}) =
-            @invoke *(D::Diagonal, A::AbstractMatrix)
-    @eval *(D::Diagonal, A::$UTri{<:Any, <:StridedMaybeAdjOrTransMat}) =
-            @invoke *(D::Diagonal, A::AbstractMatrix)
+    @eval mul(D::Diagonal, A::$Tri{<:Any, <:StridedMaybeAdjOrTransMat}) =
+            @invoke mul(D::Diagonal, A::AbstractMatrix)
+    @eval mul(D::Diagonal, A::$UTri{<:Any, <:StridedMaybeAdjOrTransMat}) =
+            @invoke mul(D::Diagonal, A::AbstractMatrix)
     # 3-arg ldiv!
     @eval ldiv!(C::$Tri, D::Diagonal, A::$Tri) = $Tri(ldiv!(C.data, D, A.data))
     @eval ldiv!(C::$Tri, D::Diagonal, A::$UTri) = $Tri(_setdiag!(ldiv!(C.data, D, A.data), inv, D.diag))

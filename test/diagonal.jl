@@ -1458,4 +1458,11 @@ end
     @test opnorm(D, Inf) == opnorm(A, Inf)
 end
 
+@testset "issymmetric with NaN" begin
+    D = Diagonal(fill(NaN,3))
+    A = Array(D)
+    @test issymmetric(D) == issymmetric(A)
+    @test ishermitian(D) == ishermitian(A)
+end
+
 end # module TestDiagonal

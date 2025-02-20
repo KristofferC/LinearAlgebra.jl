@@ -320,7 +320,7 @@ Base.literal_pow(::typeof(^), D::Diagonal, valp::Val) =
     Diagonal(Base.literal_pow.(^, D.diag, valp)) # for speed
 Base.literal_pow(::typeof(^), D::Diagonal, ::Val{-1}) = inv(D) # for disambiguation
 
-function (*)(Da::Diagonal, Db::Diagonal)
+function mul(Da::Diagonal, Db::Diagonal)
     matmul_size_check(size(Da), size(Db))
     return Diagonal(Da.diag .* Db.diag)
 end
@@ -1018,8 +1018,8 @@ end
 /(u::AdjointAbsVec, D::Diagonal) = (D' \ u')'
 /(u::TransposeAbsVec, D::Diagonal) = transpose(transpose(D) \ transpose(u))
 # disambiguation methods: Call unoptimized version for user defined AbstractTriangular.
-*(A::AbstractTriangular, D::Diagonal) = @invoke *(A::AbstractMatrix, D::Diagonal)
-*(D::Diagonal, A::AbstractTriangular) = @invoke *(D::Diagonal, A::AbstractMatrix)
+mul(A::AbstractTriangular, D::Diagonal) = @invoke mul(A::AbstractMatrix, D::Diagonal)
+mul(D::Diagonal, A::AbstractTriangular) = @invoke mul(D::Diagonal, A::AbstractMatrix)
 
 _opnorm1(A::Diagonal) = maximum(norm(x) for x in A.diag)
 _opnormInf(A::Diagonal) = maximum(norm(x) for x in A.diag)

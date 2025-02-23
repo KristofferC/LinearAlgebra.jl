@@ -139,10 +139,10 @@ julia> UnitUpperTriangular(A)
 """
 UnitUpperTriangular
 
-const UpperOrUnitUpperTriangular{T,S} = Union{UpperTriangular{T,S}, UnitUpperTriangular{T,S}}
-const LowerOrUnitLowerTriangular{T,S} = Union{LowerTriangular{T,S}, UnitLowerTriangular{T,S}}
-const UpperOrLowerTriangular{T,S} = Union{UpperOrUnitUpperTriangular{T,S}, LowerOrUnitLowerTriangular{T,S}}
-const UnitUpperOrUnitLowerTriangular{T,S} = Union{UnitUpperTriangular{T,S}, UnitLowerTriangular{T,S}}
+const UpperOrUnitUpperTriangular{T,S<:AbstractMatrix{T}} = Union{UpperTriangular{T,S}, UnitUpperTriangular{T,S}}
+const LowerOrUnitLowerTriangular{T,S<:AbstractMatrix{T}} = Union{LowerTriangular{T,S}, UnitLowerTriangular{T,S}}
+const UpperOrLowerTriangular{T,S<:AbstractMatrix{T}} = Union{UpperOrUnitUpperTriangular{T,S}, LowerOrUnitLowerTriangular{T,S}}
+const UnitUpperOrUnitLowerTriangular{T,S<:AbstractMatrix{T}} = Union{UnitUpperTriangular{T,S}, UnitLowerTriangular{T,S}}
 
 uppertriangular(M) = UpperTriangular(M)
 lowertriangular(M) = LowerTriangular(M)

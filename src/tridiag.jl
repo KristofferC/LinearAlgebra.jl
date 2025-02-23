@@ -475,7 +475,7 @@ end
 end
 
 @inline function getindex(A::SymTridiagonal, b::BandIndex)
-    @boundscheck checkbounds(A, i, j)
+    @boundscheck checkbounds(A, b)
     if b.band == 0
         return symmetric((@inbounds A.dv[b.index]), :U)::symmetric_type(eltype(A.dv))
     elseif b.band == -1

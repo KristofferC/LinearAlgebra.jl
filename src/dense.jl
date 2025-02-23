@@ -682,6 +682,22 @@ cis(A::AbstractMatrix{<:Base.HWNumber}) = exp_maybe_inplace(float.(im .* A))
 exp_maybe_inplace(A::StridedMatrix{<:Union{ComplexF32, ComplexF64}}) = exp!(A)
 exp_maybe_inplace(A) = exp(A)
 
+function copytri_maybe_inplace(A::StridedMatrix, uplo, conjugate::Bool=false, diag::Bool=false)
+    copytri!(A, uplo, conjugate, diag)
+end
+function copytri_maybe_inplace(A, uplo, conjugate::Bool=false, diag::Bool=false)
+    k = Int(diag)
+    if uplo == 'U'
+        B = triu(A, 1-k)
+        triu(A, k) + (conjugate ? copy(adjoint(B)) : copy(transpose(B)))
+    elseif uplo == 'L'
+        B = tril(A, k-1)
+        tril(A, -k) + (conjugate ? copy(adjoint(B)) : copy(transpose(B)))
+    else
+        throw(ArgumentError(lazy"uplo argument must be 'U' (upper) or 'L' (lower), got $uplo"))
+    end
+end
+
 """
     ^(b::Number, A::AbstractMatrix)
 
@@ -1140,7 +1156,8 @@ function sin(A::AbstractMatrix{<:Real})
     if isdiag(A)
         return applydiagonal(sin, A)
     elseif issymmetric(A)
-        return copytri!(parent(sin(Symmetric(A))), 'U')
+        P = parent(sin(Symmetric(A)))
+        return copytri_maybe_inplace(P, 'U')
     end
     M = im .* float.(A)
     return imag(exp_maybe_inplace(M))
@@ -1149,7 +1166,8 @@ function sin(A::AbstractMatrix{<:Complex})
     if isdiag(A)
         return applydiagonal(sin, A)
     elseif ishermitian(A)
-        return copytri!(parent(sin(Hermitian(A))), 'U', true)
+        P = parent(sin(Hermitian(A)))
+        return copytri_maybe_inplace(P, 'U', true)
     end
     M = im .* float.(A)
     Mneg = -M
@@ -1183,8 +1201,10 @@ julia> C
 function sincos(A::AbstractMatrix{<:Real})
     if issymmetric(A)
         symsinA, symcosA = sincos(Symmetric(A))
-        sinA = copytri!(parent(symsinA), 'U')
-        cosA = copytri!(parent(symcosA), 'U')
+        Psin = parent(symsinA)
+        Pcos = parent(symcosA)
+        sinA = copytri_maybe_inplace(Psin, 'U')
+        cosA = copytri_maybe_inplace(Pcos, 'U')
         return sinA, cosA
     end
     M =  im .* float.(A)
@@ -1194,8 +1214,10 @@ end
 function sincos(A::AbstractMatrix{<:Complex})
     if ishermitian(A)
         hermsinA, hermcosA = sincos(Hermitian(A))
-        sinA = copytri!(parent(hermsinA), 'U', true)
-        cosA = copytri!(parent(hermcosA), 'U', true)
+        Psin = parent(hermsinA)
+        Pcos = parent(hermcosA)
+        sinA = copytri_maybe_inplace(Psin, 'U', true)
+        cosA = copytri_maybe_inplace(Pcos, 'U', true)
         return sinA, cosA
     end
     M = im .* float.(A)
@@ -1239,7 +1261,8 @@ function tan(A::AbstractMatrix)
     if isdiag(A)
         return applydiagonal(tan, A)
     elseif ishermitian(A)
-        return copytri!(parent(tan(Hermitian(A))), 'U', true)
+        P = parent(tan(Hermitian(A)))
+        return copytri_maybe_inplace(P, 'U', true)
     end
     S, C = sincos(A)
     S /= C
@@ -1255,7 +1278,8 @@ function cosh(A::AbstractMatrix)
     if isdiag(A)
         return applydiagonal(cosh, A)
     elseif ishermitian(A)
-        return copytri!(parent(cosh(Hermitian(A))), 'U', true)
+        P = parent(cosh(Hermitian(A)))
+        return copytri_maybe_inplace(P, 'U', true)
     end
     X = exp(A)
     negA = @. float(-A)
@@ -1272,7 +1296,8 @@ function sinh(A::AbstractMatrix)
     if isdiag(A)
         return applydiagonal(sinh, A)
     elseif ishermitian(A)
-        return copytri!(parent(sinh(Hermitian(A))), 'U', true)
+        P = parent(sinh(Hermitian(A)))
+        return copytri_maybe_inplace(P, 'U', true)
     end
     X = exp(A)
     negA = @. float(-A)
@@ -1289,7 +1314,8 @@ function tanh(A::AbstractMatrix)
     if isdiag(A)
         return applydiagonal(tanh, A)
     elseif ishermitian(A)
-        return copytri!(parent(tanh(Hermitian(A))), 'U', true)
+        P = parent(tanh(Hermitian(A)))
+        return copytri_maybe_inplace(P, 'U', true)
     end
     X = exp(A)
     negA = @. float(-A)
@@ -1332,7 +1358,8 @@ function acos(A::AbstractMatrix)
         return applydiagonal(acos, A)
     elseif ishermitian(A)
         acosHermA = acos(Hermitian(A))
-        return isa(acosHermA, Hermitian) ? copytri!(parent(acosHermA), 'U', true) : parent(acosHermA)
+        P = parent(acosHermA)
+        return isa(acosHermA, Hermitian) ? copytri_maybe_inplace(P, 'U', true) : P
     end
     SchurF = Schur{Complex}(schur(A))
     U = UpperTriangular(SchurF.T)
@@ -1365,7 +1392,8 @@ function asin(A::AbstractMatrix)
         return applydiagonal(asin, A)
     elseif ishermitian(A)
         asinHermA = asin(Hermitian(A))
-        return isa(asinHermA, Hermitian) ? copytri!(parent(asinHermA), 'U', true) : parent(asinHermA)
+        P = parent(asinHermA)
+        return isa(asinHermA, Hermitian) ? copytri_maybe_inplace(P, 'U', true) : P
     end
     SchurF = Schur{Complex}(schur(A))
     U = UpperTriangular(SchurF.T)
@@ -1397,7 +1425,8 @@ function atan(A::AbstractMatrix)
     if isdiag(A)
         return applydiagonal(atan, A)
     elseif ishermitian(A)
-        return copytri!(parent(atan(Hermitian(A))), 'U', true)
+        P = parent(atan(Hermitian(A)))
+        return copytri_maybe_inplace(P, 'U', true)
     end
     SchurF = Schur{Complex}(schur(A))
     U = im * UpperTriangular(SchurF.T)
@@ -1418,7 +1447,8 @@ function acosh(A::AbstractMatrix)
         return applydiagonal(acosh, A)
     elseif ishermitian(A)
         acoshHermA = acosh(Hermitian(A))
-        return isa(acoshHermA, Hermitian) ? copytri!(parent(acoshHermA), 'U', true) : parent(acoshHermA)
+        P = parent(acoshHermA)
+        return isa(acoshHermA, Hermitian) ? copytri_maybe_inplace(P, 'U', true) : P
     end
     SchurF = Schur{Complex}(schur(A))
     U = UpperTriangular(SchurF.T)
@@ -1438,7 +1468,8 @@ function asinh(A::AbstractMatrix)
     if isdiag(A)
         return applydiagonal(asinh, A)
     elseif ishermitian(A)
-        return copytri!(parent(asinh(Hermitian(A))), 'U', true)
+        P = parent(asinh(Hermitian(A)))
+        return copytri_maybe_inplace(P, 'U', true)
     end
     SchurF = Schur{Complex}(schur(A))
     U = UpperTriangular(SchurF.T)
@@ -1458,7 +1489,8 @@ function atanh(A::AbstractMatrix)
     if isdiag(A)
         return applydiagonal(atanh, A)
     elseif ishermitian(A)
-        return copytri!(parent(atanh(Hermitian(A))), 'U', true)
+        P = parent(atanh(Hermitian(A)))
+        return copytri_maybe_inplace(P, 'U', true)
     end
     SchurF = Schur{Complex}(schur(A))
     U = UpperTriangular(SchurF.T)

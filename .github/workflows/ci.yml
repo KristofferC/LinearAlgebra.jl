@@ -22,6 +22,7 @@ jobs:
       - name: Generate docs
         run: |
           julia --color=yes --project=.ci -e 'using Pkg; Pkg.instantiate()'
+          julia --color=yes --project=docs -e 'using Pkg; Pkg.instantiate()'
           julia --color=yes --project=.ci .ci/create_sysimage_and_run_docs.jl
         env:
           DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }}

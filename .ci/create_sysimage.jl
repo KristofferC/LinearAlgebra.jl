@@ -12,5 +12,5 @@ function create_sysimage_linear_algebra()
     withenv("JULIA_IMAGE_THREADS" => ncores) do
         create_sysimage(["LinearAlgebra", "Test", "Distributed", "Dates", "Printf", "Random"]; sysimage_path=sysimage, incremental=false, filter_stdlibs=true)
     end
-    return sysimage
+    return sysimage, ncores
 end

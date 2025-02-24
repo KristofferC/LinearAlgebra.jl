@@ -1394,6 +1394,8 @@ end
         tA = LinearAlgebra.copytri_maybe_inplace(copy(Ac), 'L', conjugate, diag)
         @test tR == tA
     end
+
+    @test_throws ArgumentError LinearAlgebra.copytri_maybe_inplace(Rc, 'X')
 end
 
 end # module TestDense

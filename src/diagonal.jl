@@ -379,6 +379,26 @@ function rmul!(T::Tridiagonal, D::Diagonal)
     end
     return T
 end
+for T in [:UpperTriangular, :UnitUpperTriangular,
+        :LowerTriangular, :UnitLowerTriangular]
+    @eval rmul!(A::$T{<:Any, <:StridedMatrix}, D::Diagonal) = _rmul!(A, D)
+    @eval lmul!(D::Diagonal, A::$T{<:Any, <:StridedMatrix}) = _lmul!(D, A)
+end
+function _rmul!(A::UpperOrLowerTriangular, D::Diagonal)
+    P = parent(A)
+    isunit = A isa UnitUpperOrUnitLowerTriangular
+    isupper = A isa UpperOrUnitUpperTriangular
+    for col in axes(A,2)
+        rowstart = isupper ? firstindex(A,1) : col+isunit
+        rowstop = isupper ? col-isunit : lastindex(A,1)
+        for row in rowstart:rowstop
+            P[row, col] *= D.diag[col]
+        end
+    end
+    isunit && _setdiag!(P, identity, D.diag)
+    TriWrapper = isupper ? UpperTriangular : LowerTriangular
+    return TriWrapper(P)
+end
 
 function lmul!(D::Diagonal, B::AbstractVecOrMat)
     matmul_size_check(size(D), size(B))
@@ -387,6 +407,13 @@ function lmul!(D::Diagonal, B::AbstractVecOrMat)
         @inbounds B[I] = D.diag[row] * B[I]
     end
     return B
+end
+# A' = D * A' => A = A * D'
+# This uses the fact that D' is a Diagonal
+function lmul!(D::Diagonal, A::AdjOrTransAbsMat)
+    f = wrapperop(A)
+    rmul!(f(A), f(D))
+    A
 end
 
 # in-place multiplication with a diagonal
@@ -402,12 +429,20 @@ function lmul!(D::Diagonal, T::Tridiagonal)
     end
     return T
 end
-# A' = D * A' => A = A * D'
-# This uses the fact that D' is a Diagonal
-function lmul!(D::Diagonal, A::AdjOrTransAbsMat)
-    f = wrapperop(A)
-    rmul!(f(A), f(D))
-    A
+function _lmul!(D::Diagonal, A::UpperOrLowerTriangular)
+    P = parent(A)
+    isunit = A isa UnitUpperOrUnitLowerTriangular
+    isupper = A isa UpperOrUnitUpperTriangular
+    for col in axes(A,2)
+        rowstart = isupper ? firstindex(A,1) : col+isunit
+        rowstop = isupper ? col-isunit : lastindex(A,1)
+        for row in rowstart:rowstop
+            P[row, col] = D.diag[row] * P[row, col]
+        end
+    end
+    isunit && _setdiag!(P, identity, D.diag)
+    TriWrapper = isupper ? UpperTriangular : LowerTriangular
+    return TriWrapper(P)
 end
 
 @inline function __muldiag_nonzeroalpha!(out, D::Diagonal, B, alpha::Number, beta::Number)

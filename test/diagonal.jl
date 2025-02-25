@@ -1197,11 +1197,11 @@ end
     outTri = similar(TriA)
     out = similar(A)
     # 2 args
-    for fun in (*, rmul!, rdiv!, /)
+    @testset for fun in (*, rmul!, rdiv!, /)
         @test fun(copy(TriA), D)::Tri == fun(Matrix(TriA), D)
         @test fun(copy(UTriA), D)::Tri == fun(Matrix(UTriA), D)
     end
-    for fun in (*, lmul!, ldiv!, \)
+    @testset for fun in (*, lmul!, ldiv!, \)
         @test fun(D, copy(TriA))::Tri == fun(D, Matrix(TriA))
         @test fun(D, copy(UTriA))::Tri == fun(D, Matrix(UTriA))
     end

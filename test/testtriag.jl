@@ -493,6 +493,8 @@ function test_triangular(elty1_types)
                 @test_throws DimensionMismatch transpose(Ann) \ bm
                 if t1 == UpperTriangular || t1 == LowerTriangular
                     @test_throws SingularException ldiv!(t1(zeros(elty1, n, n)), fill(eltyB(1), n))
+                    @test_throws SingularException ldiv!(t1(zeros(elty1, n, n)), fill(eltyB(1), n, 2))
+                    @test_throws SingularException rdiv!(fill(eltyB(1), n, n), t1(zeros(elty1, n, n)))
                 end
                 @test B / A1 ≈ B / M1
                 @test B / transpose(A1) ≈ B / transpose(M1)

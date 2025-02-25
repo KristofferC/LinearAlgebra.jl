@@ -972,7 +972,8 @@ sqrt(::AbstractMatrix)
 function sqrt(A::AbstractMatrix{T}) where {T<:Union{Real,Complex}}
     if checksquare(A) == 0
         return copy(float(A))
-    elseif isdiag(A)
+    elseif isdiag(A) && (T <: Complex || all(x -> x ≥ zero(x), diagview(A)))
+        # Real Diagonal sqrt requires each diagonal element to be positive
         return applydiagonal(sqrt, A)
     elseif ishermitian(A)
         sqrtHermA = sqrt(Hermitian(A))

@@ -319,8 +319,8 @@ const AdjointAbsVec{T} = Adjoint{T,<:AbstractVector}
 const AdjointAbsMat{T} = Adjoint{T,<:AbstractMatrix}
 const TransposeAbsVec{T} = Transpose{T,<:AbstractVector}
 const TransposeAbsMat{T} = Transpose{T,<:AbstractMatrix}
-const AdjOrTransAbsVec{T} = AdjOrTrans{T,<:AbstractVector}
-const AdjOrTransAbsMat{T} = AdjOrTrans{T,<:AbstractMatrix}
+const AdjOrTransAbsVec{T,V<:AbstractVector} = AdjOrTrans{T,V}
+const AdjOrTransAbsMat{T,M<:AbstractMatrix} = AdjOrTrans{T,M}
 
 # for internal use below
 wrapperop(_) = identity

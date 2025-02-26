@@ -360,6 +360,13 @@ function rmul!(A::AbstractMatrix, D::Diagonal)
     end
     return A
 end
+# A' = A' * D => A = D' * A
+# This uses the fact that D' is a Diagonal
+function rmul!(A::AdjOrTransAbsMat, D::Diagonal)
+    f = wrapperop(A)
+    lmul!(f(D), f(A))
+    A
+end
 # T .= T * D
 function rmul!(T::Tridiagonal, D::Diagonal)
     matmul_size_check(size(T), size(D))
@@ -394,6 +401,13 @@ function lmul!(D::Diagonal, T::Tridiagonal)
         d[i+1] = D.diag[i+1] * d[i+1]
     end
     return T
+end
+# A' = D * A' => A = A * D'
+# This uses the fact that D' is a Diagonal
+function lmul!(D::Diagonal, A::AdjOrTransAbsMat)
+    f = wrapperop(A)
+    rmul!(f(A), f(D))
+    A
 end
 
 @inline function __muldiag_nonzeroalpha!(out, D::Diagonal, B, alpha::Number, beta::Number)

@@ -1257,6 +1257,20 @@ end
     end
 end
 
+@testset "rmul!/lmul! for adj/trans" begin
+    A = rand(5,4); B = similar(A)
+    for f in (adjoint, transpose)
+        D = Diagonal(rand(size(A,1)))
+        B .= A
+        rmul!(f(B), D)
+        @test f(B) == f(A) * D
+        D = Diagonal(rand(size(A,2)))
+        B .= A
+        lmul!(D, f(B))
+        @test f(B) == D * f(A)
+    end
+end
+
 struct SMatrix1{T} <: AbstractArray{T,2}
     elt::T
 end

@@ -1261,11 +1261,11 @@ end
     for T in (Float64, ComplexF64)
         A = rand(T,5,4); B = similar(A)
         for f in (adjoint, transpose)
-            D = Diagonal(rand(size(A,1)))
+            D = Diagonal(rand(T, size(A,1)))
             B .= A
             rmul!(f(B), D)
             @test f(B) == f(A) * D
-            D = Diagonal(rand(size(A,2)))
+            D = Diagonal(rand(T, size(A,2)))
             B .= A
             lmul!(D, f(B))
             @test f(B) == D * f(A)

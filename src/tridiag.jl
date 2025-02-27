@@ -474,6 +474,19 @@ end
     end
 end
 
+@inline function getindex(A::SymTridiagonal, b::BandIndex)
+    @boundscheck checkbounds(A, b)
+    if b.band == 0
+        return symmetric((@inbounds A.dv[b.index]), :U)::symmetric_type(eltype(A.dv))
+    elseif b.band == -1
+        return copy(transpose(@inbounds A.ev[b.index])) # materialized for type stability
+    elseif b.band == 1
+        return @inbounds A.ev[b.index]
+    else
+        return diagzero(A, b)
+    end
+end
+
 Base._reverse(A::SymTridiagonal, dims) = reverse!(Matrix(A); dims)
 Base._reverse(A::SymTridiagonal, dims::Colon) = SymTridiagonal(reverse(A.dv), reverse(A.ev))
 Base._reverse!(A::SymTridiagonal, dims::Colon) = (reverse!(A.dv); reverse!(A.ev); A)

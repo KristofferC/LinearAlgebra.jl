@@ -21,9 +21,9 @@ jobs:
           version: 'nightly'
       - name: Generate docs
         run: |
-          julia --project --color=yes -e ''
-          julia --project --color=yes -e 'using Pkg; Pkg.respect_sysimage_versions(false); Pkg.activate("docs"); Pkg.develop(PackageSpec(path = pwd()))'
-          julia --project=docs --color=yes docs/make.jl
+          julia --color=yes --project=.ci -e 'using Pkg; Pkg.instantiate()'
+          julia --color=yes --project=docs -e 'using Pkg; Pkg.instantiate()'
+          julia --color=yes --project=.ci .ci/create_sysimage_and_run_docs.jl
         env:
           DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

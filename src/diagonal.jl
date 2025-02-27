@@ -762,16 +762,16 @@ end
 kron(A::Diagonal, B::Diagonal) = Diagonal(kron(A.diag, B.diag))
 
 function kron(A::Diagonal, B::SymTridiagonal)
-    kdv = kron(diag(A), B.dv)
+    kdv = kron(A.diag, B.dv)
     # We don't need to drop the last element
-    kev = kron(diag(A), _pushzero(_evview(B)))
+    kev = kron(A.diag, _pushzero(_evview(B)))
     SymTridiagonal(kdv, kev)
 end
 function kron(A::Diagonal, B::Tridiagonal)
     # `_droplast!` is only guaranteed to work with `Vector`
-    kd = convert(Vector, kron(diag(A), B.d))
-    kdl = _droplast!(convert(Vector, kron(diag(A), _pushzero(B.dl))))
-    kdu = _droplast!(convert(Vector, kron(diag(A), _pushzero(B.du))))
+    kd = convert(Vector, kron(A.diag, B.d))
+    kdl = _droplast!(convert(Vector, kron(A.diag, _pushzero(B.dl))))
+    kdu = _droplast!(convert(Vector, kron(A.diag, _pushzero(B.du))))
     Tridiagonal(kdl, kd, kdu)
 end
 

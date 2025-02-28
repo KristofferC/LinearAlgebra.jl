@@ -1108,4 +1108,38 @@ end
     end
 end
 
+@testset "convert to Tridiagonal/SymTridiagonal" begin
+    @testset "Tridiagonal" begin
+        for M in [diagm(0 => [1,2,3], 1=>[4,5]),
+                diagm(0 => [1,2,3], 1=>[4,5], -1=>[6,7]),
+                diagm(-1 => [1,2], 1=>[4,5])]
+            B = convert(Tridiagonal, M)
+            @test B == Tridiagonal(M)
+            B = convert(Tridiagonal{Int8}, M)
+            @test B == M
+            @test B isa Tridiagonal{Int8}
+            B = convert(Tridiagonal{Int8, OffsetVector{Int8, Vector{Int8}}}, M)
+            @test B == M
+            @test B isa Tridiagonal{Int8, OffsetVector{Int8, Vector{Int8}}}
+        end
+        @test_throws InexactError convert(Tridiagonal, fill(5, 4, 4))
+    end
+    @testset "SymTridiagonal" begin
+        for M in [diagm(0 => [1,2,3], 1=>[4,5], -1=>[4,5]),
+            diagm(0 => [1,2,3]),
+            diagm(-1 => [1,2], 1=>[1,2])]
+            B = convert(SymTridiagonal, M)
+            @test B == SymTridiagonal(M)
+            B = convert(SymTridiagonal{Int8}, M)
+            @test B == M
+            @test B isa SymTridiagonal{Int8}
+            B = convert(SymTridiagonal{Int8, OffsetVector{Int8, Vector{Int8}}}, M)
+            @test B == M
+            @test B isa SymTridiagonal{Int8, OffsetVector{Int8, Vector{Int8}}}
+        end
+        @test_throws InexactError convert(SymTridiagonal, fill(5, 4, 4))
+        @test_throws InexactError convert(SymTridiagonal, diagm(0=>fill(NaN,4)))
+    end
+end
+
 end # module TestTridiagonal

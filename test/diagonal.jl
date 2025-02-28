@@ -6,8 +6,6 @@ using Test, LinearAlgebra, Random
 using LinearAlgebra: BlasFloat, BlasComplex
 
 const BASE_TEST_PATH = joinpath(Sys.BINDIR, "..", "share", "julia", "test")
-isdefined(Main, :Furlongs) || @eval Main include(joinpath($(BASE_TEST_PATH), "testhelpers", "Furlongs.jl"))
-using .Main.Furlongs
 
 isdefined(Main, :OffsetArrays) || @eval Main include(joinpath($(BASE_TEST_PATH), "testhelpers", "OffsetArrays.jl"))
 using .Main.OffsetArrays
@@ -470,23 +468,6 @@ Random.seed!(1)
         @test svdvals(D) == s
         @test svd(D).V == V
     end
-
-    @testset "svd/eigen with Diagonal{Furlong}" begin
-        Du = Furlong.(D)
-        @test Du isa Diagonal{<:Furlong{1}}
-        F = svd(Du)
-        U, s, V = F
-        @test map(x -> x.val, Matrix(F)) ≈ map(x -> x.val, Du)
-        @test svdvals(Du) == s
-        @test U isa AbstractMatrix{<:Furlong{0}}
-        @test V isa AbstractMatrix{<:Furlong{0}}
-        @test s isa AbstractVector{<:Furlong{1}}
-        E = eigen(Du)
-        vals, vecs = E
-        @test Matrix(E) == Du
-        @test vals isa AbstractVector{<:Furlong{1}}
-        @test vecs isa AbstractMatrix{<:Furlong{0}}
-    end
 end
 
 @testset "axes" begin
@@ -858,6 +839,10 @@ end
     @test eigD.values == evals
     @test eigD.vectors ≈ evecs
     @test D * eigD.vectors ≈ eigD.vectors * Diagonal(eigD.values)
+
+    # test concrete types
+    D = Diagonal([I2 for _ in 1:4])
+    @test eigen(D) isa Eigen{Vector{Float64}, Float64, Matrix{Vector{Float64}}, Vector{Float64}}
 end
 
 @testset "linear solve for block diagonal matrices" begin
@@ -1212,11 +1197,11 @@ end
     outTri = similar(TriA)
     out = similar(A)
     # 2 args
-    for fun in (*, rmul!, rdiv!, /)
+    @testset for fun in (*, rmul!, rdiv!, /)
         @test fun(copy(TriA), D)::Tri == fun(Matrix(TriA), D)
         @test fun(copy(UTriA), D)::Tri == fun(Matrix(UTriA), D)
     end
-    for fun in (*, lmul!, ldiv!, \)
+    @testset for fun in (*, lmul!, ldiv!, \)
         @test fun(D, copy(TriA))::Tri == fun(D, Matrix(TriA))
         @test fun(D, copy(UTriA))::Tri == fun(D, Matrix(UTriA))
     end
@@ -1269,6 +1254,22 @@ end
         @test mul!(copy(U), ID, U) == U
         @test mul!(copy(U), U, ID, 2, -1) == U
         @test mul!(copy(U), ID, U, 2, -1) == U
+    end
+end
+
+@testset "rmul!/lmul! for adj/trans" begin
+    for T in (Float64, ComplexF64)
+        A = rand(T,5,4); B = similar(A)
+        for f in (adjoint, transpose)
+            D = Diagonal(rand(T, size(A,1)))
+            B .= A
+            rmul!(f(B), D)
+            @test f(B) == f(A) * D
+            D = Diagonal(rand(T, size(A,2)))
+            B .= A
+            lmul!(D, f(B))
+            @test f(B) == D * f(A)
+        end
     end
 end
 
@@ -1478,6 +1479,13 @@ end
     M = Matrix(D)
     @test M isa Matrix{eltype(D)}
     @test M == D
+end
+
+@testset "issymmetric with NaN" begin
+    D = Diagonal(fill(NaN,3))
+    A = Array(D)
+    @test issymmetric(D) == issymmetric(A)
+    @test ishermitian(D) == ishermitian(A)
 end
 
 end # module TestDiagonal

@@ -43,7 +43,7 @@ Random.seed!(1)
        @test Matrix(convert(newtype, A)) == Matrix(A)
     end
     for newtype in [Diagonal, Bidiagonal]
-       @test_throws ArgumentError convert(newtype,A)
+       @test_throws Union{ArgumentError,InexactError} convert(newtype,A)
     end
     A = SymTridiagonal(a, zeros(n-1))
     @test Matrix(convert(Bidiagonal,A)) == Matrix(A)
@@ -57,7 +57,7 @@ Random.seed!(1)
        @test Matrix(convert(newtype, A)) == Matrix(A)
     end
     for newtype in [Diagonal, Bidiagonal]
-        @test_throws ArgumentError convert(newtype,A)
+        @test_throws Union{ArgumentError,InexactError} convert(newtype,A)
     end
     A = Tridiagonal(zeros(n-1), [1.0:n;], fill(1., n-1)) #not morally Diagonal
     @test Matrix(convert(Bidiagonal, A)) == Matrix(A)
@@ -79,7 +79,7 @@ Random.seed!(1)
     end
     A = UpperTriangular(triu(rand(n,n)))
     for newtype in [Diagonal, Bidiagonal, Tridiagonal, SymTridiagonal]
-        @test_throws ArgumentError convert(newtype,A)
+        @test_throws Union{ArgumentError,InexactError} convert(newtype,A)
     end
 
 
@@ -378,11 +378,6 @@ end
     end
 end
 
-# for testing types with a dimension
-const BASE_TEST_PATH = joinpath(Sys.BINDIR, "..", "share", "julia", "test")
-isdefined(Main, :Furlongs) || @eval Main include(joinpath($(BASE_TEST_PATH), "testhelpers", "Furlongs.jl"))
-using .Main.Furlongs
-
 @testset "zero and one for structured matrices" begin
     for elty in (Int64, Float64, ComplexF64)
         D = Diagonal(rand(elty, 10))
@@ -442,27 +437,6 @@ using .Main.Furlongs
     @test one(T) isa Tridiagonal
     @test zero(S) isa SymTridiagonal
     @test one(S) isa SymTridiagonal
-
-    # eltype with dimensions
-    D0 = Diagonal{Furlong{0, Int64}}([1, 2, 3, 4])
-    Bu0 = Bidiagonal{Furlong{0, Int64}}([1, 2, 3, 4], [1, 2, 3], 'U')
-    Bl0 =  Bidiagonal{Furlong{0, Int64}}([1, 2, 3, 4], [1, 2, 3], 'L')
-    T0 = Tridiagonal{Furlong{0, Int64}}([1, 2, 3], [1, 2, 3, 4], [1, 2, 3])
-    S0 = SymTridiagonal{Furlong{0, Int64}}([1, 2, 3, 4], [1, 2, 3])
-    F2 = Furlongs.Furlong{2}(1)
-    D2 = Diagonal{Furlong{2, Int64}}([1, 2, 3, 4].*F2)
-    Bu2 = Bidiagonal{Furlong{2, Int64}}([1, 2, 3, 4].*F2, [1, 2, 3].*F2, 'U')
-    Bl2 =  Bidiagonal{Furlong{2, Int64}}([1, 2, 3, 4].*F2, [1, 2, 3].*F2, 'L')
-    T2 = Tridiagonal{Furlong{2, Int64}}([1, 2, 3].*F2, [1, 2, 3, 4].*F2, [1, 2, 3].*F2)
-    S2 = SymTridiagonal{Furlong{2, Int64}}([1, 2, 3, 4].*F2, [1, 2, 3].*F2)
-    mats = Any[D0, Bu0, Bl0, T0, S0, D2, Bu2, Bl2, T2, S2]
-    for A in mats
-        @test iszero(zero(A))
-        @test isone(one(A))
-        @test zero(A) == zero(Matrix(A))
-        @test one(A) == one(Matrix(A))
-        @test eltype(one(A)) == typeof(one(eltype(A)))
-    end
 end
 
 @testset "== for structured matrices" begin

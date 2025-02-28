@@ -28,6 +28,10 @@ struct SingularException <: Exception
     info::BlasInt
 end
 
+function Base.showerror(io::IO, ex::SingularException)
+    print(io, "SingularException: matrix is singular; factorization failed. Zero pivot found at index ", ex.info)
+end
+
 """
     PosDefException
 

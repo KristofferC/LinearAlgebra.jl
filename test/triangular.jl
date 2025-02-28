@@ -703,7 +703,7 @@ end
 @testset "(l/r)mul! and (l/r)div! for generic triangular" begin
     @testset for T in (UpperTriangular, LowerTriangular, UnitUpperTriangular, UnitLowerTriangular)
         M = MyTriangular(T(rand(4,4)))
-        D = randn(4)
+        D = Diagonal(randn(4))
         A = rand(4,4)
         Ac = similar(A)
         @testset "lmul!" begin

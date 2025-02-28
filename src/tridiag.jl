@@ -107,13 +107,13 @@ julia> SymTridiagonal(B)
  [1 2; 3 4]  [1 2; 2 3]
 ```
 """
-function SymTridiagonal(A::AbstractMatrix)
+function (::Type{SymTri})(A::AbstractMatrix) where {SymTri <: SymTridiagonal}
     checksquare(A)
     du = diag(A, 1)
     d  = diag(A)
     dl = diag(A, -1)
     if _checksymmetric(d, du, dl)
-        SymTridiagonal(d, du)
+        SymTri(d, du)
     else
         throw(ArgumentError("matrix is not symmetric; cannot convert to SymTridiagonal"))
     end

@@ -1121,6 +1121,12 @@ end
             diagm(-1 => [1,2], 1=>[1,2])]
             B = convert(SymTridiagonal, M)
             @test B == SymTridiagonal(M)
+            B = convert(SymTridiagonal{Int8}, M)
+            @test B == M
+            @test B isa SymTridiagonal{Int8}
+            B = convert(SymTridiagonal{Int8, OffsetVector{Int8, Vector{Int8}}}, M)
+            @test B == M
+            @test B isa SymTridiagonal{Int8, OffsetVector{Int8, Vector{Int8}}}
         end
         @test_throws InexactError convert(SymTridiagonal, fill(5, 4, 4))
         @test_throws InexactError convert(SymTridiagonal, diagm(0=>fill(NaN,4)))

@@ -1451,7 +1451,13 @@ eigen(M::Bidiagonal) = Eigen(eigvals(M), eigvecs(M))
 
 Base._sum(A::Bidiagonal, ::Colon) = sum(A.dv) + sum(A.ev)
 function Base._sum(A::Bidiagonal, dims::Integer)
-    res = Base.reducedim_initarray(A, dims, zero(eltype(A)))
+    Base._check_valid_region(dims)
+    ax = (dims == 1) ? (1, axes(A, 2)) :
+         (dims == 2) ? (axes(A, 1), 1) :
+         axes(A)
+    res = Base.mapreduce_similar(A, eltype(A), ax)
+    fill!(res, zero(eltype(A)))
+
     n = length(A.dv)
     if n == 0
         # Just to be sure. This shouldn't happen since there is a check whether

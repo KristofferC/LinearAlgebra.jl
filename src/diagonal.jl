@@ -1188,7 +1188,13 @@ end
 
 Base._sum(A::Diagonal, ::Colon) = sum(A.diag)
 function Base._sum(A::Diagonal, dims::Integer)
-    res = Base.reducedim_initarray(A, dims, zero(eltype(A)))
+    Base._check_valid_region(dims)
+    ax = (dims == 1) ? (1, axes(A, 2)) :
+         (dims == 2) ? (axes(A, 1), 1) :
+         axes(A)
+    res = Base.mapreduce_similar(A, eltype(A), ax)
+    fill!(res, zero(eltype(A)))
+
     if dims <= 2
         for i = 1:length(A.diag)
             @inbounds res[i] = A.diag[i]

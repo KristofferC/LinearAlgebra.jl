@@ -921,7 +921,13 @@ function Base._sum(A::SymTridiagonal, ::Colon)
 end
 
 function Base._sum(A::Tridiagonal, dims::Integer)
-    res = Base.reducedim_initarray(A, dims, zero(eltype(A)))
+    Base._check_valid_region(dims)
+    ax = (dims == 1) ? (1, axes(A, 2)) :
+         (dims == 2) ? (axes(A, 1), 1) :
+         axes(A)
+    res = Base.mapreduce_similar(A, eltype(A), ax)
+    fill!(res, zero(eltype(A)))
+
     n = length(A.d)
     if n == 0
         return res
@@ -955,7 +961,13 @@ function Base._sum(A::Tridiagonal, dims::Integer)
 end
 
 function Base._sum(A::SymTridiagonal, dims::Integer)
-    res = Base.reducedim_initarray(A, dims, zero(eltype(A)))
+    Base._check_valid_region(dims)
+    ax = (dims == 1) ? (1, axes(A, 2)) :
+         (dims == 2) ? (axes(A, 1), 1) :
+         axes(A)
+    res = Base.mapreduce_similar(A, eltype(A), ax)
+    fill!(res, zero(eltype(A)))
+
     n = length(A.dv)
     if n == 0
         return res

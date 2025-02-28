@@ -1046,9 +1046,6 @@ end
 *(x::TransposeAbsVec, D::Diagonal, y::AbstractVector) = _mapreduce_prod(*, x, D, y)
 /(u::AdjointAbsVec, D::Diagonal) = (D' \ u')'
 /(u::TransposeAbsVec, D::Diagonal) = transpose(transpose(D) \ transpose(u))
-# disambiguation methods: Call unoptimized version for user defined AbstractTriangular.
-mul(A::AbstractTriangular, D::Diagonal) = @invoke mul(A::AbstractMatrix, D::Diagonal)
-mul(D::Diagonal, A::AbstractTriangular) = @invoke mul(D::Diagonal, A::AbstractMatrix)
 
 _opnorm1(A::Diagonal) = maximum(norm(x) for x in A.diag)
 _opnormInf(A::Diagonal) = maximum(norm(x) for x in A.diag)

@@ -113,7 +113,13 @@ Diagonal{T}(D::Diagonal) where {T} = Diagonal{T}(D.diag)
 
 AbstractMatrix{T}(D::Diagonal) where {T} = Diagonal{T}(D)
 AbstractMatrix{T}(D::Diagonal{T}) where {T} = copy(D)
-Matrix(D::Diagonal{T}) where {T} = Matrix{promote_type(T, typeof(zero(T)))}(D)
+function Matrix(D::Diagonal{T}) where {T}
+    if haszero(T)
+        Matrix{promote_type(T, typeof(zero(T)))}(D)
+    else
+        convert(Matrix, [i for i in D])
+    end
+end
 Matrix(D::Diagonal{Any}) = Matrix{Any}(D)
 Array(D::Diagonal{T}) where {T} = Matrix(D)
 function Matrix{T}(D::Diagonal) where {T}

@@ -1099,6 +1099,15 @@ end
     @test opnorm(S, Inf) == opnorm(Matrix(S), Inf)
 end
 
+@testset "Matrix conversion without zero" begin
+    dv, ev = fill(ones(2,2), 2), fill(ones(2,2), 1)
+    for T in (Tridiagonal(ev, dv, ev), SymTridiagonal(dv, ev))
+        M = Matrix(T)
+        @test M isa Matrix
+        @test M == T
+    end
+end
+
 @testset "convert to Tridiagonal/SymTridiagonal" begin
     @testset "Tridiagonal" begin
         for M in [diagm(0 => [1,2,3], 1=>[4,5]),

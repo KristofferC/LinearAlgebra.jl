@@ -109,8 +109,8 @@ julia> Bidiagonal(A, :L) # contains the main diagonal and first subdiagonal of A
  ⋅  ⋅  4  4
 ```
 """
-function Bidiagonal(A::AbstractMatrix, uplo::Symbol)
-    Bidiagonal(diag(A, 0), diag(A, uplo === :U ? 1 : -1), uplo)
+function (::Type{Bi})(A::AbstractMatrix, uplo::Symbol) where {Bi<:Bidiagonal}
+    Bi(diag(A, 0), diag(A, uplo === :U ? 1 : -1), uplo)
 end
 
 
@@ -161,7 +161,7 @@ end
         # we explicitly compare the possible bands as b.band may be constant-propagated
         return @inbounds A.ev[b.index]
     else
-        return diagzero(A, Tuple(_cartinds(b))...)
+        return diagzero(A, b)
     end
 end
 
@@ -220,7 +220,12 @@ promote_rule(::Type{<:Tridiagonal}, ::Type{<:Bidiagonal}) = Tridiagonal
 AbstractMatrix{T}(A::Bidiagonal) where {T} = Bidiagonal{T}(A)
 AbstractMatrix{T}(A::Bidiagonal{T}) where {T} = copy(A)
 
-convert(::Type{T}, m::AbstractMatrix) where {T<:Bidiagonal} = m isa T ? m : T(m)::T
+function convert(::Type{T}, A::AbstractMatrix) where T<:Bidiagonal
+    checksquare(A)
+    isbanded(A, -1, 1) || throw(InexactError(:convert, T, A))
+    iszero(diagview(A, 1)) ? T(A, :L) :
+        iszero(diagview(A, -1)) ? T(A, :U) : throw(InexactError(:convert, T, A))
+end
 
 similar(B::Bidiagonal, ::Type{T}) where {T} = Bidiagonal(similar(B.dv, T), similar(B.ev, T), B.uplo)
 similar(B::Bidiagonal, ::Type{T}, dims::Union{Dims{1},Dims{2}}) where {T} = similar(B.dv, T, dims)
@@ -405,14 +410,15 @@ end
 function diag(M::Bidiagonal, n::Integer=0)
     # every branch call similar(..., ::Int) to make sure the
     # same vector type is returned independent of n
-    v = similar(M.dv, max(0, length(M.dv)-abs(n)))
+    dinds = diagind(M, n, IndexStyle(M))
+    v = similar(M.dv, length(dinds))
     if n == 0
         copyto!(v, M.dv)
     elseif (n == 1 && M.uplo == 'U') ||  (n == -1 && M.uplo == 'L')
         copyto!(v, M.ev)
     elseif -size(M,1) <= n <= size(M,1)
-        for i in eachindex(v)
-            v[i] = M[BandIndex(n,i)]
+        for i in eachindex(v, dinds)
+            @inbounds v[i] = M[BandIndex(n,i)]
         end
     end
     return v

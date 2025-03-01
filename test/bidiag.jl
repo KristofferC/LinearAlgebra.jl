@@ -835,9 +835,6 @@ end
     end
 
     @testset "non-standard axes" begin
-        LinearAlgebra.diagzero(T::Type, ax::Tuple{SizedArrays.SOneTo, Vararg{SizedArrays.SOneTo}}) =
-            zeros(T, ax)
-
         s = SizedArrays.SizedArray{(2,2)}([1 2; 3 4])
         B = Bidiagonal(fill(s,4), fill(s,3), :U)
         @test @inferred(B[2,1]) isa typeof(s)
@@ -1156,6 +1153,23 @@ end
     @test opnorm(B, 1) == opnorm(Matrix(B), 1)
     @test opnorm(B, 2) ≈ opnorm(Matrix(B), 2)
     @test opnorm(B, Inf) == opnorm(Matrix(B), Inf)
+end
+
+@testset "convert to Bidiagonal" begin
+    M = diagm(0 => [1,2,3], 1=>[4,5])
+    B = convert(Bidiagonal, M)
+    @test B == Bidiagonal(M, :U)
+    M = diagm(0 => [1,2,3], -1=>[4,5])
+    B = convert(Bidiagonal, M)
+    @test B == Bidiagonal(M, :L)
+    B = convert(Bidiagonal{Int8}, M)
+    @test B == M
+    @test B isa Bidiagonal{Int8, Vector{Int8}}
+    B = convert(Bidiagonal{Int8, OffsetVector{Int8, Vector{Int8}}}, M)
+    @test B == M
+    @test B isa Bidiagonal{Int8, OffsetVector{Int8, Vector{Int8}}}
+    M = diagm(-1 => [1,2], 1=>[4,5])
+    @test_throws InexactError convert(Bidiagonal, M)
 end
 
 end # module TestBidiagonal

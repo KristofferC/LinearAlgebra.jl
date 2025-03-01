@@ -354,6 +354,11 @@ end
         @test_throws DimensionMismatch LAPACK.ormqr!('L','N',A,temp,B)
         @test_throws ArgumentError LAPACK.ormqr!('X','N',A,temp,B)
         @test_throws ArgumentError LAPACK.ormqr!('L','X',A,temp,B)
+        
+        A = rand(elty,10,11)
+        A,tau = LAPACK.geqrf!(A)
+        B = copy(A)
+        @test LAPACK.orgqr!(B,tau) ≈ LAPACK.ormqr!('R','N',A,tau,Matrix{elty}(I, 10, 10))
 
         A = rand(elty,10,10)
         A,tau = LAPACK.geqlf!(A)
@@ -371,6 +376,11 @@ end
         @test_throws DimensionMismatch LAPACK.ormql!('L','N',A,temp,B)
         @test_throws ArgumentError LAPACK.ormql!('X','N',A,temp,B)
         @test_throws ArgumentError LAPACK.ormql!('L','X',A,temp,B)
+
+        A = rand(elty,10,11)
+        A,tau = LAPACK.geqlf!(A)
+        B = copy(A)
+        @test LAPACK.orgql!(B,tau) ≈ LAPACK.ormql!('R','N',A,tau,Matrix{elty}(I, 10, 10))
 
         A = rand(elty,10,10)
         A,tau = LAPACK.gerqf!(A)
@@ -676,18 +686,13 @@ end
 @testset "posv and some errors for friends" begin
     @testset for elty in (Float32, Float64, ComplexF32, ComplexF64)
         local n = 10
-        A = rand(elty,n,n)/100
-        A += real(diagm(0 => n*real(rand(elty,n))))
-        if elty <: Complex
-            A = A + A'
-        else
-            A = A + transpose(A)
-        end
-        B = rand(elty,n,n)
+        a = randn(elty, n, n)
+        A = a'*a
+        B = rand(elty, n, n)
         D = copy(A)
         C = copy(B)
-        D,C = LAPACK.posv!('U',D,C)
-        @test A\B ≈ C
+        D, C = LAPACK.posv!('U', D, C)
+        @test A\B ≈ C rtol=cond(A)*eps(real(elty))
         offsizemat = Matrix{elty}(undef, n+1, n+1)
         @test_throws DimensionMismatch LAPACK.posv!('U', D, offsizemat)
         @test_throws DimensionMismatch LAPACK.potrs!('U', D, offsizemat)
@@ -738,6 +743,11 @@ end
         select,Vln,Vrn = LAPACK.trevc!('B','S',select,copy(T))
         @test Vrn ≈ v
         @test Vln ≈ Vl
+        Vl = LAPACK.trevc!('L','A',select,copy(T))
+        Vr = LAPACK.trevc!('R','A',select,copy(T))
+        Vla, Vra = LAPACK.trevc!('B','A',select,copy(T))
+        @test Vr ≈ Vra
+        @test Vl ≈ Vla
         @test_throws ArgumentError LAPACK.trevc!('V','S',select,T)
         @test_throws ArgumentError LAPACK.trevc!('R','X',select,T)
         temp1010 = rand(elty,10,10)

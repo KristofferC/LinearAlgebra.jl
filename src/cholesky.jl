@@ -65,7 +65,7 @@ julia> C.U
   ⋅    ⋅    3.0
 
 julia> C.L
-3×3 LowerTriangular{Float64, Matrix{Float64}}:
+3×3 LowerTriangular{Float64, Adjoint{Float64, Matrix{Float64}}}:
   2.0   ⋅    ⋅
   6.0  1.0   ⋅
  -8.0  5.0  3.0
@@ -305,7 +305,7 @@ function _cholpivoted!(A::AbstractMatrix, ::Type{UpperTriangular}, tol::Real, ch
     rTA = real(eltype(A))
     # checks
     Base.require_one_based_indexing(A)
-    n = LinearAlgebra.checksquare(A)
+    n = checksquare(A)
     # initialization
     piv = collect(1:n)
     dots = zeros(rTA, n)
@@ -354,7 +354,7 @@ function _cholpivoted!(A::AbstractMatrix, ::Type{LowerTriangular}, tol::Real, ch
     rTA = real(eltype(A))
     # checks
     Base.require_one_based_indexing(A)
-    n = LinearAlgebra.checksquare(A)
+    n = checksquare(A)
     # initialization
     piv = collect(1:n)
     dots = zeros(rTA, n)
@@ -530,7 +530,7 @@ julia> C.U
   ⋅    ⋅    3.0
 
 julia> C.L
-3×3 LowerTriangular{Float64, Matrix{Float64}}:
+3×3 LowerTriangular{Float64, Adjoint{Float64, Matrix{Float64}}}:
   2.0   ⋅    ⋅
   6.0  1.0   ⋅
  -8.0  5.0  3.0
@@ -664,30 +664,15 @@ copy(C::CholeskyPivoted) = CholeskyPivoted(copy(C.factors), C.uplo, C.piv, C.ran
 size(C::Union{Cholesky, CholeskyPivoted}) = size(C.factors)
 size(C::Union{Cholesky, CholeskyPivoted}, d::Integer) = size(C.factors, d)
 
-function _choleskyUfactor(Cfactors, Cuplo)
-    if Cuplo === 'U'
-        return UpperTriangular(Cfactors)
-    else
-        return copy(LowerTriangular(Cfactors)')
-    end
-end
-function _choleskyLfactor(Cfactors, Cuplo)
-    if Cuplo === 'L'
-        return LowerTriangular(Cfactors)
-    else
-        return copy(UpperTriangular(Cfactors)')
-    end
-end
-
 function getproperty(C::Cholesky, d::Symbol)
     Cfactors = getfield(C, :factors)
     Cuplo    = getfield(C, :uplo)
     if d === :U
-        _choleskyUfactor(Cfactors, Cuplo)
+        UpperTriangular(Cuplo == 'U' ? Cfactors : Cfactors')
     elseif d === :L
-        _choleskyLfactor(Cfactors, Cuplo)
+        LowerTriangular(Cuplo == 'L' ? Cfactors : Cfactors')
     elseif d === :UL
-        return (Cuplo === 'U' ? UpperTriangular(Cfactors) : LowerTriangular(Cfactors))
+        return (Cuplo == 'U' ? UpperTriangular(Cfactors) : LowerTriangular(Cfactors))
     else
         return getfield(C, d)
     end
@@ -704,9 +689,9 @@ function getproperty(C::CholeskyPivoted{T}, d::Symbol) where {T}
     Cfactors = getfield(C, :factors)
     Cuplo    = getfield(C, :uplo)
     if d === :U
-        _choleskyUfactor(Cfactors, Cuplo)
+        UpperTriangular(Cuplo == 'U' ? Cfactors : Cfactors')
     elseif d === :L
-        _choleskyLfactor(Cfactors, Cuplo)
+        LowerTriangular(Cuplo == 'L' ? Cfactors : Cfactors')
     elseif d === :p
         return getfield(C, :piv)
     elseif d === :P
@@ -813,7 +798,7 @@ function rdiv!(B::AbstractMatrix, C::Cholesky)
     end
 end
 
-function LinearAlgebra.rdiv!(B::AbstractMatrix, C::CholeskyPivoted)
+function rdiv!(B::AbstractMatrix, C::CholeskyPivoted)
     n = size(C, 2)
     for i in 1:size(B, 1)
         permute!(view(B, i, 1:n), C.piv)
@@ -965,7 +950,7 @@ function lowrankdowndate!(C::Cholesky, v::AbstractVector)
         s = conj(v[i]/Aii)
         s2 = abs2(s)
         if s2 > 1
-            throw(LinearAlgebra.PosDefException(i))
+            throw(PosDefException(i))
         end
         c = sqrt(1 - abs2(s))
 

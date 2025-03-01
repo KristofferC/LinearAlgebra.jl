@@ -3,6 +3,7 @@
 module TestSymmetricEigen
 
 using Test, LinearAlgebra
+using LinearAlgebra: DivideAndConquer, QRIteration, RobustRepresentations
 
 @testset "chol-eigen-eigvals" begin
     ## Cholesky decomposition based
@@ -173,7 +174,7 @@ end
     @test D.vectors ≈ D32.vectors
 
     # ensure that different algorithms dispatch correctly
-    λ, V = eigen(C, LinearAlgebra.QRIteration())
+    λ, V = eigen(C; alg=LinearAlgebra.QRIteration())
     @test λ isa Vector{Float16}
     @test C * V ≈ V * Diagonal(λ)
 end
@@ -182,6 +183,20 @@ end
     S = Symmetric(rand(ComplexF64,2,2))
     λ, v = eigen(S)
     @test S * v ≈ v * Diagonal(λ)
+end
+
+@testset "eigendecomposition Algorithms" begin
+    for T in (Float64, ComplexF64, Float32, ComplexF32)
+        n = 4
+        A = T <: Real ? Symmetric(randn(T, n, n)) : Hermitian(randn(T, n, n))
+        d, v = eigen(A)
+        for alg in (DivideAndConquer(), QRIteration(), RobustRepresentations())
+            @test (@inferred eigvals(A; alg)) ≈ d
+            d2, v2 = @inferred eigen(A; alg)
+            @test d2 ≈ d
+            @test A * v2 ≈ v2 * Diagonal(d2)
+        end
+    end
 end
 
 end # module TestSymmetricEigen

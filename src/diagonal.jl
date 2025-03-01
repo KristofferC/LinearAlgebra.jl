@@ -213,7 +213,7 @@ zeroslike(::Type{M}, sz::Tuple{Integer, Vararg{Integer}}) where {M<:AbstractMatr
     if b.band == 0
         @inbounds r = D.diag[b.index]
     else
-        r = diagzero(D, Tuple(_cartinds(b))...)
+        r = diagzero(D, b)
     end
     r
 end
@@ -247,9 +247,7 @@ Base._reverse(A::Diagonal, dims) = reverse!(Matrix(A); dims)
 Base._reverse(A::Diagonal, ::Colon) = Diagonal(reverse(A.diag))
 Base._reverse!(A::Diagonal, ::Colon) = (reverse!(A.diag); A)
 
-ishermitian(D::Diagonal{<:Number}) = isreal(D.diag)
 ishermitian(D::Diagonal) = all(ishermitian, D.diag)
-issymmetric(D::Diagonal{<:Number}) = true
 issymmetric(D::Diagonal) = all(issymmetric, D.diag)
 isposdef(D::Diagonal) = all(isposdef, D.diag)
 
@@ -332,6 +330,28 @@ function (*)(D::Diagonal, V::AbstractVector)
     return D.diag .* V
 end
 
+function _diag_adj_mul(A::AdjOrTransAbsMat, D::Diagonal)
+    adj = wrapperop(A)
+    copy(adj(adj(D) * adj(A)))
+end
+function _diag_adj_mul(A::AdjOrTransAbsMat{<:Number, <:StridedMatrix}, D::Diagonal{<:Number})
+    @invoke *(A::AbstractMatrix, D::AbstractMatrix)
+end
+function _diag_adj_mul(D::Diagonal, A::AdjOrTransAbsMat)
+    adj = wrapperop(A)
+    copy(adj(adj(A) * adj(D)))
+end
+function _diag_adj_mul(D::Diagonal{<:Number}, A::AdjOrTransAbsMat{<:Number, <:StridedMatrix})
+    @invoke *(D::AbstractMatrix, A::AbstractMatrix)
+end
+
+function (*)(A::AdjOrTransAbsMat, D::Diagonal)
+    _diag_adj_mul(A, D)
+end
+function (*)(D::Diagonal, A::AdjOrTransAbsMat)
+    _diag_adj_mul(D, A)
+end
+
 function rmul!(A::AbstractMatrix, D::Diagonal)
     matmul_size_check(size(A), size(D))
     for I in CartesianIndices(A)
@@ -339,6 +359,13 @@ function rmul!(A::AbstractMatrix, D::Diagonal)
         @inbounds A[row, col] *= D.diag[col]
     end
     return A
+end
+# A' = A' * D => A = D' * A
+# This uses the fact that D' is a Diagonal
+function rmul!(A::AdjOrTransAbsMat, D::Diagonal)
+    f = wrapperop(A)
+    lmul!(f(D), f(A))
+    A
 end
 # T .= T * D
 function rmul!(T::Tridiagonal, D::Diagonal)
@@ -352,6 +379,26 @@ function rmul!(T::Tridiagonal, D::Diagonal)
     end
     return T
 end
+for T in [:UpperTriangular, :UnitUpperTriangular,
+        :LowerTriangular, :UnitLowerTriangular]
+    @eval rmul!(A::$T{<:Any, <:StridedMatrix}, D::Diagonal) = _rmul!(A, D)
+    @eval lmul!(D::Diagonal, A::$T{<:Any, <:StridedMatrix}) = _lmul!(D, A)
+end
+function _rmul!(A::UpperOrLowerTriangular, D::Diagonal)
+    P = parent(A)
+    isunit = A isa UnitUpperOrUnitLowerTriangular
+    isupper = A isa UpperOrUnitUpperTriangular
+    for col in axes(A,2)
+        rowstart = isupper ? firstindex(A,1) : col+isunit
+        rowstop = isupper ? col-isunit : lastindex(A,1)
+        for row in rowstart:rowstop
+            P[row, col] *= D.diag[col]
+        end
+    end
+    isunit && _setdiag!(P, identity, D.diag)
+    TriWrapper = isupper ? UpperTriangular : LowerTriangular
+    return TriWrapper(P)
+end
 
 function lmul!(D::Diagonal, B::AbstractVecOrMat)
     matmul_size_check(size(D), size(B))
@@ -360,6 +407,13 @@ function lmul!(D::Diagonal, B::AbstractVecOrMat)
         @inbounds B[I] = D.diag[row] * B[I]
     end
     return B
+end
+# A' = D * A' => A = A * D'
+# This uses the fact that D' is a Diagonal
+function lmul!(D::Diagonal, A::AdjOrTransAbsMat)
+    f = wrapperop(A)
+    rmul!(f(A), f(D))
+    A
 end
 
 # in-place multiplication with a diagonal
@@ -374,6 +428,21 @@ function lmul!(D::Diagonal, T::Tridiagonal)
         d[i+1] = D.diag[i+1] * d[i+1]
     end
     return T
+end
+function _lmul!(D::Diagonal, A::UpperOrLowerTriangular)
+    P = parent(A)
+    isunit = A isa UnitUpperOrUnitLowerTriangular
+    isupper = A isa UpperOrUnitUpperTriangular
+    for col in axes(A,2)
+        rowstart = isupper ? firstindex(A,1) : col+isunit
+        rowstop = isupper ? col-isunit : lastindex(A,1)
+        for row in rowstart:rowstop
+            P[row, col] = D.diag[row] * P[row, col]
+        end
+    end
+    isunit && _setdiag!(P, identity, D.diag)
+    TriWrapper = isupper ? UpperTriangular : LowerTriangular
+    return TriWrapper(P)
 end
 
 @inline function __muldiag_nonzeroalpha!(out, D::Diagonal, B, alpha::Number, beta::Number)
@@ -671,22 +740,24 @@ end
 for Tri in (:UpperTriangular, :LowerTriangular)
     UTri = Symbol(:Unit, Tri)
     # 2 args
-    for (fun, f) in zip((:*, :rmul!, :rdiv!, :/), (:identity, :identity, :inv, :inv))
-        @eval $fun(A::$Tri, D::Diagonal) = $Tri($fun(A.data, D))
-        @eval $fun(A::$UTri, D::Diagonal) = $Tri(_setdiag!($fun(A.data, D), $f, D.diag))
+    for (fun, f) in zip((:mul, :rmul!, :rdiv!, :/), (:identity, :identity, :inv, :inv))
+        g = fun == :mul ? :* : fun
+        @eval $fun(A::$Tri, D::Diagonal) = $Tri($g(A.data, D))
+        @eval $fun(A::$UTri, D::Diagonal) = $Tri(_setdiag!($g(A.data, D), $f, D.diag))
     end
-    @eval *(A::$Tri{<:Any, <:StridedMaybeAdjOrTransMat}, D::Diagonal) =
-            @invoke *(A::AbstractMatrix, D::Diagonal)
-    @eval *(A::$UTri{<:Any, <:StridedMaybeAdjOrTransMat}, D::Diagonal) =
-            @invoke *(A::AbstractMatrix, D::Diagonal)
-    for (fun, f) in zip((:*, :lmul!, :ldiv!, :\), (:identity, :identity, :inv, :inv))
-        @eval $fun(D::Diagonal, A::$Tri) = $Tri($fun(D, A.data))
-        @eval $fun(D::Diagonal, A::$UTri) = $Tri(_setdiag!($fun(D, A.data), $f, D.diag))
+    @eval mul(A::$Tri{<:Any, <:StridedMaybeAdjOrTransMat}, D::Diagonal) =
+            @invoke mul(A::AbstractMatrix, D::Diagonal)
+    @eval mul(A::$UTri{<:Any, <:StridedMaybeAdjOrTransMat}, D::Diagonal) =
+            @invoke mul(A::AbstractMatrix, D::Diagonal)
+    for (fun, f) in zip((:mul, :lmul!, :ldiv!, :\), (:identity, :identity, :inv, :inv))
+        g = fun == :mul ? :* : fun
+        @eval $fun(D::Diagonal, A::$Tri) = $Tri($g(D, A.data))
+        @eval $fun(D::Diagonal, A::$UTri) = $Tri(_setdiag!($g(D, A.data), $f, D.diag))
     end
-    @eval *(D::Diagonal, A::$Tri{<:Any, <:StridedMaybeAdjOrTransMat}) =
-            @invoke *(D::Diagonal, A::AbstractMatrix)
-    @eval *(D::Diagonal, A::$UTri{<:Any, <:StridedMaybeAdjOrTransMat}) =
-            @invoke *(D::Diagonal, A::AbstractMatrix)
+    @eval mul(D::Diagonal, A::$Tri{<:Any, <:StridedMaybeAdjOrTransMat}) =
+            @invoke mul(D::Diagonal, A::AbstractMatrix)
+    @eval mul(D::Diagonal, A::$UTri{<:Any, <:StridedMaybeAdjOrTransMat}) =
+            @invoke mul(D::Diagonal, A::AbstractMatrix)
     # 3-arg ldiv!
     @eval ldiv!(C::$Tri, D::Diagonal, A::$Tri) = $Tri(ldiv!(C.data, D, A.data))
     @eval ldiv!(C::$Tri, D::Diagonal, A::$UTri) = $Tri(_setdiag!(ldiv!(C.data, D, A.data), inv, D.diag))
@@ -726,16 +797,16 @@ end
 kron(A::Diagonal, B::Diagonal) = Diagonal(kron(A.diag, B.diag))
 
 function kron(A::Diagonal, B::SymTridiagonal)
-    kdv = kron(diag(A), B.dv)
+    kdv = kron(A.diag, B.dv)
     # We don't need to drop the last element
-    kev = kron(diag(A), _pushzero(_evview(B)))
+    kev = kron(A.diag, _pushzero(_evview(B)))
     SymTridiagonal(kdv, kev)
 end
 function kron(A::Diagonal, B::Tridiagonal)
     # `_droplast!` is only guaranteed to work with `Vector`
-    kd = convert(Vector, kron(diag(A), B.d))
-    kdl = _droplast!(convert(Vector, kron(diag(A), _pushzero(B.dl))))
-    kdu = _droplast!(convert(Vector, kron(diag(A), _pushzero(B.du))))
+    kd = convert(Vector, kron(A.diag, B.d))
+    kdl = _droplast!(convert(Vector, kron(A.diag, _pushzero(B.dl))))
+    kdu = _droplast!(convert(Vector, kron(A.diag, _pushzero(B.du))))
     Tridiagonal(kdl, kd, kdu)
 end
 
@@ -836,12 +907,13 @@ permutedims(D::Diagonal, perm) = (Base.checkdims_perm(axes(D), axes(D), perm); D
 function diag(D::Diagonal, k::Integer=0)
     # every branch call similar(..., ::Int) to make sure the
     # same vector type is returned independent of k
-    v = similar(D.diag, max(0, length(D.diag)-abs(k)))
+    dinds = diagind(D, k, IndexStyle(D))
+    v = similar(D.diag, length(dinds))
     if k == 0
         copyto!(v, D.diag)
     else
-        for i in eachindex(v)
-            v[i] = D[BandIndex(k, i)]
+        for i in eachindex(v, dinds)
+            @inbounds v[i] = D[dinds[i]]
         end
     end
     return v
@@ -910,15 +982,18 @@ function pinv(D::Diagonal{T}, tol::Real) where T
     Diagonal(Di)
 end
 
+_ortho_eltype(T) = Base.promote_op(/, T, T)
+_ortho_eltype(T::Type{<:Number}) = typeof(one(T)/one(T))
+
 # TODO Docstrings for eigvals, eigvecs, eigen all mention permute, scale, sortby as keyword args
 # but not all of them below provide them. Do we need to fix that?
 #Eigensystem
 eigvals(D::Diagonal{<:Number}; permute::Bool=true, scale::Bool=true) = copy(D.diag)
 eigvals(D::Diagonal; permute::Bool=true, scale::Bool=true) =
     reduce(vcat, eigvals(x) for x in D.diag) #For block matrices, etc.
-function eigvecs(D::Diagonal{T}) where T<:AbstractMatrix
+function eigvecs(D::Diagonal{T}) where {T<:AbstractMatrix}
     diag_vecs = [ eigvecs(x) for x in D.diag ]
-    matT = reduce((a,b) -> promote_type(typeof(a),typeof(b)), diag_vecs)
+    matT = promote_type(map(typeof, diag_vecs)...)
     ncols_diag = [ size(x, 2) for x in D.diag ]
     nrows = size(D, 1)
     vecs = Matrix{Vector{eltype(matT)}}(undef, nrows, sum(ncols_diag))
@@ -940,7 +1015,7 @@ function eigen(D::Diagonal; permute::Bool=true, scale::Bool=true, sortby::Union{
     if any(!isfinite, D.diag)
         throw(ArgumentError("matrix contains Infs or NaNs"))
     end
-    Td = Base.promote_op(/, eltype(D), eltype(D))
+    Td = _ortho_eltype(eltype(D))
     λ = eigvals(D)
     if !isnothing(sortby)
         p = sortperm(λ; alg=QuickSort, by=sortby)
@@ -998,13 +1073,13 @@ function svd(D::Diagonal{T}) where {T<:Number}
     s = abs.(d)
     piv = sortperm(s, rev = true)
     S = s[piv]
-    Td  = typeof(oneunit(T)/oneunit(T))
+    Td  = _ortho_eltype(T)
     U = zeros(Td, size(D))
     Vt = copy(U)
     for i in 1:length(d)
         j = piv[i]
-        U[j,i] = iszero(d[j]) ? oneunit(Td) : d[j] / S[i]
-        Vt[i,j] = oneunit(Td)
+        U[j,i] = iszero(d[j]) ? one(Td) : d[j] / S[i]
+        Vt[i,j] = one(Td)
     end
     return SVD(U, S, Vt)
 end

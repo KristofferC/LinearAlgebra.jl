@@ -839,6 +839,10 @@ end
     @test eigD.values == evals
     @test eigD.vectors ≈ evecs
     @test D * eigD.vectors ≈ eigD.vectors * Diagonal(eigD.values)
+
+    # test concrete types
+    D = Diagonal([I2 for _ in 1:4])
+    @test eigen(D) isa Eigen{Vector{Float64}, Float64, Matrix{Vector{Float64}}, Vector{Float64}}
 end
 
 @testset "linear solve for block diagonal matrices" begin
@@ -1193,11 +1197,11 @@ end
     outTri = similar(TriA)
     out = similar(A)
     # 2 args
-    for fun in (*, rmul!, rdiv!, /)
+    @testset for fun in (*, rmul!, rdiv!, /)
         @test fun(copy(TriA), D)::Tri == fun(Matrix(TriA), D)
         @test fun(copy(UTriA), D)::Tri == fun(Matrix(UTriA), D)
     end
-    for fun in (*, lmul!, ldiv!, \)
+    @testset for fun in (*, lmul!, ldiv!, \)
         @test fun(D, copy(TriA))::Tri == fun(D, Matrix(TriA))
         @test fun(D, copy(UTriA))::Tri == fun(D, Matrix(UTriA))
     end
@@ -1250,6 +1254,22 @@ end
         @test mul!(copy(U), ID, U) == U
         @test mul!(copy(U), U, ID, 2, -1) == U
         @test mul!(copy(U), ID, U, 2, -1) == U
+    end
+end
+
+@testset "rmul!/lmul! for adj/trans" begin
+    for T in (Float64, ComplexF64)
+        A = rand(T,5,4); B = similar(A)
+        for f in (adjoint, transpose)
+            D = Diagonal(rand(T, size(A,1)))
+            B .= A
+            rmul!(f(B), D)
+            @test f(B) == f(A) * D
+            D = Diagonal(rand(T, size(A,2)))
+            B .= A
+            lmul!(D, f(B))
+            @test f(B) == D * f(A)
+        end
     end
 end
 
@@ -1452,6 +1472,13 @@ end
     @test opnorm(D, 1) == opnorm(A, 1)
     @test opnorm(D, 2) ≈ opnorm(A, 2)
     @test opnorm(D, Inf) == opnorm(A, Inf)
+end
+
+@testset "issymmetric with NaN" begin
+    D = Diagonal(fill(NaN,3))
+    A = Array(D)
+    @test issymmetric(D) == issymmetric(A)
+    @test ishermitian(D) == ishermitian(A)
 end
 
 end # module TestDiagonal

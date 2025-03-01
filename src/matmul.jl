@@ -111,7 +111,9 @@ julia> [1 1; 0 1] * [1 0; 1 1]
  1  1
 ```
 """
-function (*)(A::AbstractMatrix, B::AbstractMatrix)
+(*)(A::AbstractMatrix, B::AbstractMatrix) = mul(A, B)
+# we add an extra level of indirection to avoid ambiguities in *
+function mul(A::AbstractMatrix, B::AbstractMatrix)
     TS = promote_op(matprod, eltype(A), eltype(B))
     mul!(matprod_dest(A, B, TS), A, B)
 end
@@ -1021,6 +1023,7 @@ function _generic_matmatmul_nonadjtrans!(C, A, B, alpha, beta)
     @inbounds for n in axes(B, 2), k in axes(B, 1)
         # Balpha = B[k,n] * alpha, but we skip the multiplication in case isone(alpha)
         Balpha = @stable_muladdmul MulAddMul(alpha, false)(B[k,n])
+        !ismissing(Balpha) && iszero(Balpha) && continue
         @simd for m in axes(A, 1)
             C[m,n] = muladd(A[m,k], Balpha, C[m,n])
         end

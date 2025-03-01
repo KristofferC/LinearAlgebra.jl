@@ -67,6 +67,7 @@ dimg  = randn(n)/2
         @test (l*u)[invperm(p),:] ≈ a
         @test a * inv(lua) ≈ Matrix(I, n, n)
         @test copy(lua) == lua
+        @test lu!(copy(lua),a) == lua
         if eltya <: BlasFloat
             # test conversion of LU factorization's numerical type
             bft = eltya <: Real ? LinearAlgebra.LU{BigFloat} : LinearAlgebra.LU{Complex{BigFloat}}

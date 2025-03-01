@@ -703,6 +703,7 @@ end
 @testset "(l/r)mul! and (l/r)div! for generic triangular" begin
     @testset for T in (UpperTriangular, LowerTriangular, UnitUpperTriangular, UnitLowerTriangular)
         M = MyTriangular(T(rand(4,4)))
+        D = Diagonal(randn(4))
         A = rand(4,4)
         Ac = similar(A)
         @testset "lmul!" begin
@@ -724,6 +725,10 @@ end
             Ac .= A
             rdiv!(Ac, M)
             @test Ac ≈ A / M
+        end
+        @testset "diagonal mul" begin
+            @test D * M ≈ D * M.data
+            @test M * D ≈ M.data * D
         end
     end
 end

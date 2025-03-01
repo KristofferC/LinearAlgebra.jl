@@ -320,7 +320,7 @@ Base.literal_pow(::typeof(^), D::Diagonal, valp::Val) =
     Diagonal(Base.literal_pow.(^, D.diag, valp)) # for speed
 Base.literal_pow(::typeof(^), D::Diagonal, ::Val{-1}) = inv(D) # for disambiguation
 
-function (*)(Da::Diagonal, Db::Diagonal)
+function mul(Da::Diagonal, Db::Diagonal)
     matmul_size_check(size(Da), size(Db))
     return Diagonal(Da.diag .* Db.diag)
 end
@@ -330,26 +330,19 @@ function (*)(D::Diagonal, V::AbstractVector)
     return D.diag .* V
 end
 
-function _diag_adj_mul(A::AdjOrTransAbsMat, D::Diagonal)
+function mul(A::AdjOrTransAbsMat, D::Diagonal)
     adj = wrapperop(A)
     copy(adj(adj(D) * adj(A)))
 end
-function _diag_adj_mul(A::AdjOrTransAbsMat{<:Number, <:StridedMatrix}, D::Diagonal{<:Number})
-    @invoke *(A::AbstractMatrix, D::AbstractMatrix)
+function mul(A::AdjOrTransAbsMat{<:Number, <:StridedMatrix}, D::Diagonal{<:Number})
+    @invoke mul(A::AbstractMatrix, D::AbstractMatrix)
 end
-function _diag_adj_mul(D::Diagonal, A::AdjOrTransAbsMat)
+function mul(D::Diagonal, A::AdjOrTransAbsMat)
     adj = wrapperop(A)
     copy(adj(adj(A) * adj(D)))
 end
-function _diag_adj_mul(D::Diagonal{<:Number}, A::AdjOrTransAbsMat{<:Number, <:StridedMatrix})
-    @invoke *(D::AbstractMatrix, A::AbstractMatrix)
-end
-
-function (*)(A::AdjOrTransAbsMat, D::Diagonal)
-    _diag_adj_mul(A, D)
-end
-function (*)(D::Diagonal, A::AdjOrTransAbsMat)
-    _diag_adj_mul(D, A)
+function mul(D::Diagonal{<:Number}, A::AdjOrTransAbsMat{<:Number, <:StridedMatrix})
+    @invoke mul(D::AbstractMatrix, A::AbstractMatrix)
 end
 
 function rmul!(A::AbstractMatrix, D::Diagonal)
@@ -1088,9 +1081,6 @@ end
 *(x::TransposeAbsVec, D::Diagonal, y::AbstractVector) = _mapreduce_prod(*, x, D, y)
 /(u::AdjointAbsVec, D::Diagonal) = (D' \ u')'
 /(u::TransposeAbsVec, D::Diagonal) = transpose(transpose(D) \ transpose(u))
-# disambiguation methods: Call unoptimized version for user defined AbstractTriangular.
-*(A::AbstractTriangular, D::Diagonal) = @invoke *(A::AbstractMatrix, D::Diagonal)
-*(D::Diagonal, A::AbstractTriangular) = @invoke *(D::Diagonal, A::AbstractMatrix)
 
 _opnorm1(A::Diagonal) = maximum(norm(x) for x in A.diag)
 _opnormInf(A::Diagonal) = maximum(norm(x) for x in A.diag)

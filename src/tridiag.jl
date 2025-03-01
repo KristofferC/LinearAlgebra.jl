@@ -107,17 +107,20 @@ julia> SymTridiagonal(B)
  [1 2; 3 4]  [1 2; 2 3]
 ```
 """
-function SymTridiagonal(A::AbstractMatrix)
+function (::Type{SymTri})(A::AbstractMatrix) where {SymTri <: SymTridiagonal}
     checksquare(A)
     du = diag(A, 1)
     d  = diag(A)
     dl = diag(A, -1)
-    if all(((x, y),) -> x == transpose(y), zip(du, dl)) && all(issymmetric, d)
-        SymTridiagonal(d, du)
+    if _checksymmetric(d, du, dl)
+        SymTri(d, du)
     else
         throw(ArgumentError("matrix is not symmetric; cannot convert to SymTridiagonal"))
     end
 end
+
+_checksymmetric(d, du, dl) = all(((x, y),) -> x == transpose(y), zip(du, dl)) && all(issymmetric, d)
+_checksymmetric(A::AbstractMatrix) = _checksymmetric(diagview(A), diagview(A, 1), diagview(A, -1))
 
 SymTridiagonal{T,V}(S::SymTridiagonal{T,V}) where {T,V<:AbstractVector{T}} = S
 SymTridiagonal{T,V}(S::SymTridiagonal) where {T,V<:AbstractVector{T}} =
@@ -127,6 +130,11 @@ SymTridiagonal{T}(S::SymTridiagonal) where {T} =
     SymTridiagonal(convert(AbstractVector{T}, S.dv)::AbstractVector{T},
                     convert(AbstractVector{T}, S.ev)::AbstractVector{T})
 SymTridiagonal(S::SymTridiagonal) = S
+
+function convert(::Type{T}, A::AbstractMatrix) where T<:SymTridiagonal
+    checksquare(A)
+    _checksymmetric(A) && isbanded(A, -1, 1) ? T(A) : throw(InexactError(:convert, T, A))
+end
 
 AbstractMatrix{T}(S::SymTridiagonal) where {T} = SymTridiagonal{T}(S)
 AbstractMatrix{T}(S::SymTridiagonal{T}) where {T} = copy(S)
@@ -470,7 +478,20 @@ end
     elseif i + 1 == j
         return @inbounds A.ev[i]
     else
-        return zero(T)
+        return diagzero(A, i, j)
+    end
+end
+
+@inline function getindex(A::SymTridiagonal, b::BandIndex)
+    @boundscheck checkbounds(A, b)
+    if b.band == 0
+        return symmetric((@inbounds A.dv[b.index]), :U)::symmetric_type(eltype(A.dv))
+    elseif b.band == -1
+        return copy(transpose(@inbounds A.ev[b.index])) # materialized for type stability
+    elseif b.band == 1
+        return @inbounds A.ev[b.index]
+    else
+        return diagzero(A, b)
     end
 end
 
@@ -584,7 +605,7 @@ julia> Tridiagonal(A)
  ⋅  ⋅  3  4
 ```
 """
-Tridiagonal(A::AbstractMatrix) = Tridiagonal(diag(A,-1), diag(A,0), diag(A,1))
+(::Type{Tri})(A::AbstractMatrix) where {Tri<:Tridiagonal} = Tri(diag(A,-1), diag(A,0), diag(A,1))
 
 Tridiagonal(A::Tridiagonal) = A
 Tridiagonal{T}(A::Tridiagonal{T}) where {T} = A
@@ -604,6 +625,11 @@ function Tridiagonal{T,V}(A::Tridiagonal) where {T,V<:AbstractVector{T}}
     else
         Tridiagonal{T,V}(dl, d, du)
     end
+end
+
+function convert(::Type{T}, A::AbstractMatrix) where T<:Tridiagonal
+    checksquare(A)
+    isbanded(A, -1, 1) ? T(A) : throw(InexactError(:convert, T, A))
 end
 
 size(M::Tridiagonal) = (n = length(M.d); (n, n))
@@ -714,7 +740,7 @@ end
     elseif i + 1 == j
         return @inbounds A.du[i]
     else
-        return zero(T)
+        return diagzero(A, i, j)
     end
 end
 
@@ -727,7 +753,7 @@ end
     elseif b.band == 1
         return @inbounds A.du[b.index]
     else
-        return zero(T)
+        return diagzero(A, b)
     end
 end
 

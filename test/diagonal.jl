@@ -1197,11 +1197,11 @@ end
     outTri = similar(TriA)
     out = similar(A)
     # 2 args
-    for fun in (*, rmul!, rdiv!, /)
+    @testset for fun in (*, rmul!, rdiv!, /)
         @test fun(copy(TriA), D)::Tri == fun(Matrix(TriA), D)
         @test fun(copy(UTriA), D)::Tri == fun(Matrix(UTriA), D)
     end
-    for fun in (*, lmul!, ldiv!, \)
+    @testset for fun in (*, lmul!, ldiv!, \)
         @test fun(D, copy(TriA))::Tri == fun(D, Matrix(TriA))
         @test fun(D, copy(UTriA))::Tri == fun(D, Matrix(UTriA))
     end
@@ -1254,6 +1254,22 @@ end
         @test mul!(copy(U), ID, U) == U
         @test mul!(copy(U), U, ID, 2, -1) == U
         @test mul!(copy(U), ID, U, 2, -1) == U
+    end
+end
+
+@testset "rmul!/lmul! for adj/trans" begin
+    for T in (Float64, ComplexF64)
+        A = rand(T,5,4); B = similar(A)
+        for f in (adjoint, transpose)
+            D = Diagonal(rand(T, size(A,1)))
+            B .= A
+            rmul!(f(B), D)
+            @test f(B) == f(A) * D
+            D = Diagonal(rand(T, size(A,2)))
+            B .= A
+            lmul!(D, f(B))
+            @test f(B) == D * f(A)
+        end
     end
 end
 

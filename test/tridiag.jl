@@ -1099,4 +1099,67 @@ end
     @test opnorm(S, Inf) == opnorm(Matrix(S), Inf)
 end
 
+@testset "block-bidiagonal matrix indexing" begin
+    dv = [ones(4,3), ones(2,2).*2, ones(2,3).*3, ones(4,4).*4]
+    evu = [ones(4,2), ones(2,3).*2, ones(2,4).*3]
+    evl = [ones(2,3), ones(2,2).*2, ones(4,3).*3]
+    T = Tridiagonal(evl, dv, evu)
+    # check that all the matrices along a column have the same number of columns,
+    # and the matrices along a row have the same number of rows
+    for j in axes(T, 2), i in 2:size(T, 1)
+        @test size(T[i,j], 2) == size(T[1,j], 2)
+        @test size(T[i,j], 1) == size(T[i,1], 1)
+        if j < i-1 || j > i + 1
+            @test iszero(T[i,j])
+        end
+    end
+
+    @testset "non-standard axes" begin
+        s = SizedArrays.SizedArray{(2,2)}([1 2; 3 4])
+        T = Tridiagonal(fill(s,3), fill(s,4), fill(s,3))
+        @test @inferred(T[3,1]) isa typeof(s)
+        @test all(iszero, T[3,1])
+    end
+
+    # SymTridiagonal requires square diagonal blocks
+    dv = [fill(i, i, i) for i in 1:3]
+    ev = [ones(Int,1,2), ones(Int,2,3)]
+    S = SymTridiagonal(dv, ev)
+    @test S == Array{Matrix{Int}}(S)
+end
+
+@testset "convert to Tridiagonal/SymTridiagonal" begin
+    @testset "Tridiagonal" begin
+        for M in [diagm(0 => [1,2,3], 1=>[4,5]),
+                diagm(0 => [1,2,3], 1=>[4,5], -1=>[6,7]),
+                diagm(-1 => [1,2], 1=>[4,5])]
+            B = convert(Tridiagonal, M)
+            @test B == Tridiagonal(M)
+            B = convert(Tridiagonal{Int8}, M)
+            @test B == M
+            @test B isa Tridiagonal{Int8}
+            B = convert(Tridiagonal{Int8, OffsetVector{Int8, Vector{Int8}}}, M)
+            @test B == M
+            @test B isa Tridiagonal{Int8, OffsetVector{Int8, Vector{Int8}}}
+        end
+        @test_throws InexactError convert(Tridiagonal, fill(5, 4, 4))
+    end
+    @testset "SymTridiagonal" begin
+        for M in [diagm(0 => [1,2,3], 1=>[4,5], -1=>[4,5]),
+            diagm(0 => [1,2,3]),
+            diagm(-1 => [1,2], 1=>[1,2])]
+            B = convert(SymTridiagonal, M)
+            @test B == SymTridiagonal(M)
+            B = convert(SymTridiagonal{Int8}, M)
+            @test B == M
+            @test B isa SymTridiagonal{Int8}
+            B = convert(SymTridiagonal{Int8, OffsetVector{Int8, Vector{Int8}}}, M)
+            @test B == M
+            @test B isa SymTridiagonal{Int8, OffsetVector{Int8, Vector{Int8}}}
+        end
+        @test_throws InexactError convert(SymTridiagonal, fill(5, 4, 4))
+        @test_throws InexactError convert(SymTridiagonal, diagm(0=>fill(NaN,4)))
+    end
+end
+
 end # module TestTridiagonal

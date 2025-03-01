@@ -43,7 +43,7 @@ Random.seed!(1)
        @test Matrix(convert(newtype, A)) == Matrix(A)
     end
     for newtype in [Diagonal, Bidiagonal]
-       @test_throws ArgumentError convert(newtype,A)
+       @test_throws Union{ArgumentError,InexactError} convert(newtype,A)
     end
     A = SymTridiagonal(a, zeros(n-1))
     @test Matrix(convert(Bidiagonal,A)) == Matrix(A)
@@ -57,7 +57,7 @@ Random.seed!(1)
        @test Matrix(convert(newtype, A)) == Matrix(A)
     end
     for newtype in [Diagonal, Bidiagonal]
-        @test_throws ArgumentError convert(newtype,A)
+        @test_throws Union{ArgumentError,InexactError} convert(newtype,A)
     end
     A = Tridiagonal(zeros(n-1), [1.0:n;], fill(1., n-1)) #not morally Diagonal
     @test Matrix(convert(Bidiagonal, A)) == Matrix(A)
@@ -79,7 +79,7 @@ Random.seed!(1)
     end
     A = UpperTriangular(triu(rand(n,n)))
     for newtype in [Diagonal, Bidiagonal, Tridiagonal, SymTridiagonal]
-        @test_throws ArgumentError convert(newtype,A)
+        @test_throws Union{ArgumentError,InexactError} convert(newtype,A)
     end
 
 

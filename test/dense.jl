@@ -1377,4 +1377,25 @@ end
     @test_throws "matrix is singular; factorization failed" inv(A)
 end
 
+@testset "copytri_maybe_inplace" begin
+    R = reshape(1:16,4,4)
+    for conjugate in [true, false], diag in [true, false]
+        @test LinearAlgebra.copytri_maybe_inplace(R, 'U', conjugate, diag) == Symmetric(R, :U)
+        @test LinearAlgebra.copytri_maybe_inplace(R, 'L', conjugate, diag) == Symmetric(R, :L)
+    end
+
+    Rc = reshape(StepRangeLen(1+2im, 3 + 4im, 16), 4, 4)
+    Ac = Array(Rc)
+    @testset for conjugate in [true, false], diag in [true, false]
+        tR = LinearAlgebra.copytri_maybe_inplace(Rc, 'U', conjugate, diag)
+        tA = LinearAlgebra.copytri_maybe_inplace(copy(Ac), 'U', conjugate, diag)
+        @test tR == tA
+        tR = LinearAlgebra.copytri_maybe_inplace(Rc, 'L', conjugate, diag)
+        tA = LinearAlgebra.copytri_maybe_inplace(copy(Ac), 'L', conjugate, diag)
+        @test tR == tA
+    end
+
+    @test_throws ArgumentError LinearAlgebra.copytri_maybe_inplace(Rc, 'X')
+end
+
 end # module TestDense
